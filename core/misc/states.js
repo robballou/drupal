@@ -118,7 +118,7 @@ states.Dependent.prototype = {
         this.values[selector][state.name] = null;
 
         // Monitor state changes of the specified state for this dependee.
-        $(document).on('state:' + state, selector, {selector: selector, state: state}, stateEventHandler);
+        $(selector).bind('state:' + state, {selector: selector, state: state}, stateEventHandler);
 
         // Make sure the event we just bound ourselves to is actually fired.
         new states.Trigger({ selector: selector, state: state });
@@ -497,51 +497,48 @@ states.State.prototype = {
  * bubble up to these handlers. We use this system so that themes and modules
  * can override these state change handlers for particular parts of a page.
  */
-var $document = $(document);
-$document.on('state:disabled', function(e) {
-  // Only act when this change was triggered by a dependency and not by the
-  // element monitoring itself.
-  if (e.trigger) {
-    $(e.target)
-      .attr('disabled', e.value)
-        .closest('.form-item, .form-submit, .form-wrapper').toggleClass('form-disabled', e.value)
-        .find('select, input, textarea').attr('disabled', e.value);
+$(document).on({
 
-    // Note: WebKit nightlies don't reflect that change correctly.
-    // See https://bugs.webkit.org/show_bug.cgi?id=23789
-  }
-});
+  'state:disabled': function(e) {
+    // Only act when this change was triggered by a dependency and not by the
+    // element monitoring itself.
+    if (e.trigger) {
+      $(e.target)
+        .attr('disabled', e.value)
+          .closest('.form-item, .form-submit, .form-wrapper').toggleClass('form-disabled', e.value)
+          .find('select, input, textarea').attr('disabled', e.value);
 
-$document.on('state:required', function(e) {
-  if (e.trigger) {
-    var $formItems = $(e.target).closest('.form-item, .form-wrapper');
-    if (e.value) {
-      $formItems.find('label').append('<abbr class="form-required" title="' + Drupal.t('This field is required.') + '">*</abbr>');
+      // Note: WebKit nightlies don't reflect that change correctly.
+      // See https://bugs.webkit.org/show_bug.cgi?id=23789
     }
-    else {
-      $formItems.find('label .form-required').remove();
+  },
+  'state:required': function(e) {
+    if (e.trigger) {
+      var $formItems = $(e.target).closest('.form-item, .form-wrapper');
+      if (e.value) {
+        $formItems.find('label').append('<abbr class="form-required" title="' + Drupal.t('This field is required.') + '">*</abbr>');
+      }
+      else {
+        $formItems.find('label .form-required').remove();
+      }
     }
-  }
-});
+  },
 
-$document.on('state:visible', function(e) {
-  if (e.trigger) {
-    $(e.target).closest('.form-item, .form-submit, .form-wrapper').toggle(e.value);
-  }
-});
+  'state:checked': function(e) {
+    if (e.trigger) {
+      $(e.target).attr('checked', e.value);
+    }
+  },
 
-$document.on('state:checked', function(e) {
-  if (e.trigger) {
-    $(e.target).attr('checked', e.value);
-  }
-});
-
-$document.on('state:collapsed', function(e) {
-  if (e.trigger) {
-    if ($(e.target).is('.collapsed') !== e.value) {
-      $(e.target).find('> legend a').click();
+  'state:collapsed': function(e) {
+    if (e.trigger) {
+      var $target = $(e.target);
+      if ($target.is('.collapsed') !== e.value) {
+        $target.find('> legend a').click();
+      }
     }
   }
+
 });
 
 
