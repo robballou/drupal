@@ -9,7 +9,7 @@ Drupal.behaviors.viewsUiEditView = {};
 /**
  * Improve the user experience of the views edit interface.
  */
-Drupal.behaviors.viewsUiEditView.attach = function (context, settings) {
+Drupal.behaviors.viewsUiEditView.attach = function () {
 
   "use strict";
 
@@ -26,7 +26,7 @@ Drupal.behaviors.viewsUiAddView = {};
  * In the add view wizard, use the view name to prepopulate form fields such as
  * page title and menu link.
  */
-Drupal.behaviors.viewsUiAddView.attach = function (context, settings) {
+Drupal.behaviors.viewsUiAddView.attach = function (context) {
 
   "use strict";
 
@@ -218,7 +218,6 @@ Drupal.viewsUi.addItemForm.prototype.handleCheck = function (event) {
     this.checkedItems.push(label);
   }
   else {
-    var length = this.checkedItems.length;
     var position = jQuery.inArray(label, this.checkedItems);
     // Delete the item from the list and take sure that the list doesn't have undefined items left.
     for (var i = 0; i < this.checkedItems.length; i++) {
@@ -255,7 +254,7 @@ Drupal.viewsUi.addItemForm.prototype.refreshCheckedItems = function() {
  */
 Drupal.behaviors.viewsUiRenderAddViewButton = {};
 
-Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context, settings) {
+Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context) {
 
   "use strict";
 
@@ -295,7 +294,7 @@ Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context, settings
   // We use the live binder because the open class on this item will be
   // toggled on and off and we want the handler to take effect in the cases
   // that the class is present, but not when it isn't.
-  $('li.add', $menu).on('mouseleave', function (event) {
+  $('li.add', $menu).on('mouseleave', function () {
     var $this = $(this);
     var $trigger = $this.children('a[href="#"]');
     if ($this.children('.action-list').is(':visible')) {
@@ -394,7 +393,7 @@ Drupal.viewsUi.OptionsSearch.prototype.getOptions = function ($allOptions) {
 /**
  * Keyup handler for the search box that hides or shows the relevant options.
  */
-Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function (event) {
+Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function () {
 
   "use strict";
 
@@ -438,7 +437,7 @@ Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function (event) {
 };
 
 Drupal.behaviors.viewsUiPreview = {};
-Drupal.behaviors.viewsUiPreview.attach = function (context, settings) {
+Drupal.behaviors.viewsUiPreview.attach = function (context) {
 
   "use strict";
 
@@ -468,7 +467,7 @@ Drupal.behaviors.viewsUiPreview.attach = function (context, settings) {
 };
 
 Drupal.behaviors.viewsUiRearrangeFilter = {};
-Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context, settings) {
+Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
 
   "use strict";
 
@@ -566,7 +565,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks 
   // Find each (visually hidden) button for removing a filter group and insert
   // a link next to it.
   var length = this.removeGroupButtons.length;
-  for (i = 0; i < length; i++) {
+  for (var i = 0; i < length; i++) {
     var $removeGroupButton = $(this.removeGroupButtons[i]);
     var buttonId = $removeGroupButton.attr('id');
     $('<a href="#" class="views-remove-group-link">' + Drupal.t('Remove group') + '</a>')
@@ -766,7 +765,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function 
   "use strict";
 
   var $ = jQuery;
-  for (i = 0; i < this.draggableRows.length; i++) {
+  for (var i = 0; i < this.draggableRows.length; i++) {
     // Within the row, the operator labels are displayed inside the first table
     // cell (next to the filter name).
     var $draggableRow = $(this.draggableRows[i]);
@@ -877,7 +876,7 @@ Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
  * Remove icon class from elements that are themed as buttons or dropbuttons.
  */
 Drupal.behaviors.viewsRemoveIconClass = {};
-Drupal.behaviors.viewsRemoveIconClass.attach = function (context, settings) {
+Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
 
   "use strict";
 
@@ -890,7 +889,7 @@ Drupal.behaviors.viewsRemoveIconClass.attach = function (context, settings) {
  * Change "Expose filter" buttons into checkboxes.
  */
 Drupal.behaviors.viewsUiCheckboxify = {};
-Drupal.behaviors.viewsUiCheckboxify.attach = function (context, settings) {
+Drupal.behaviors.viewsUiCheckboxify.attach = function () {
 
   "use strict";
 
@@ -908,7 +907,7 @@ Drupal.behaviors.viewsUiCheckboxify.attach = function (context, settings) {
  * selected widget for the exposed group.
  */
 Drupal.behaviors.viewsUiChangeDefaultWidget = {};
-Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function (context, settings) {
+Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
 
   "use strict";
 
@@ -958,7 +957,7 @@ Drupal.viewsUi.Checkboxifier = function (button) {
 /**
  * When the checkbox is checked or unchecked, simulate a button press.
  */
-Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function (e) {
+Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
 
   "use strict";
 
@@ -970,7 +969,7 @@ Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function (e) {
  * Change the Apply button text based upon the override select state.
  */
 Drupal.behaviors.viewsUiOverrideSelect = {};
-Drupal.behaviors.viewsUiOverrideSelect.attach = function (context, settings) {
+Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
 
   "use strict";
 
@@ -1013,8 +1012,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
     return;
   }
 
-  var maxWidth = parseInt($(window).width() * .85); // 70% of window
-  var minWidth = parseInt($(window).width() * .6); // 70% of window
+  var maxWidth = parseInt($(window).width() * 0.85, 10); // 70% of window
+  var minWidth = parseInt($(window).width() * 0.6, 10); // 70% of window
 
   // Set the modal to the minwidth so that our width calculation of
   // children works.
@@ -1022,7 +1021,7 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   var width = minWidth;
 
   // Don't let the window get more than 80% of the display high.
-  var maxHeight = parseInt($(window).height() * .8);
+  var maxHeight = parseInt($(window).height() * 0.8, 10);
   var minHeight = 200;
   if (no_shrink) {
     minHeight = $modal.height();
@@ -1037,8 +1036,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   // Calculate the height of the 'scroll' region.
   var scrollHeight = 0;
 
-  scrollHeight += parseInt($scroll.css('padding-top'));
-  scrollHeight += parseInt($scroll.css('padding-bottom'));
+  scrollHeight += parseInt($scroll.css('padding-top'), 10);
+  scrollHeight += parseInt($scroll.css('padding-bottom'), 10);
 
   $scroll.children().each(function() {
     var w = $(this).innerWidth();
@@ -1052,8 +1051,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   // will be.
 
   var difference = 0;
-  difference += parseInt($scroll.css('padding-top'));
-  difference += parseInt($scroll.css('padding-bottom'));
+  difference += parseInt($scroll.css('padding-top'), 10);
+  difference += parseInt($scroll.css('padding-bottom'), 10);
   difference += $('.views-override').outerHeight(true);
   difference += $('.views-messages').outerHeight(true);
   difference += $('#views-ajax-title').outerHeight(true);
@@ -1098,7 +1097,7 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
 jQuery(function() {
 
-  "use strict"
+  "use strict";
 
   jQuery(window).bind('resize', Drupal.viewsUi.resizeModal);
   jQuery(window).bind('scroll', Drupal.viewsUi.resizeModal);
