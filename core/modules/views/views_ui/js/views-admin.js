@@ -4,14 +4,16 @@
  */
 Drupal.viewsUi = {};
 
+(function($){
+
+"use strict";
+
 Drupal.behaviors.viewsUiEditView = {};
 
 /**
  * Improve the user experience of the views edit interface.
  */
 Drupal.behaviors.viewsUiEditView.attach = function () {
-
-  "use strict";
 
   // Only show the SQL rewrite warning when the user has chosen the
   // corresponding checkbox.
@@ -27,8 +29,6 @@ Drupal.behaviors.viewsUiAddView = {};
  * page title and menu link.
  */
 Drupal.behaviors.viewsUiAddView.attach = function (context) {
-
-  "use strict";
 
   var $ = jQuery;
   var exclude, replace, suffix;
@@ -96,8 +96,6 @@ Drupal.behaviors.viewsUiAddView.attach = function (context) {
  */
 Drupal.viewsUi.FormFieldFiller = function ($target, exclude, replace, suffix) {
 
-  "use strict";
-
   var $ = jQuery;
   this.source = $('#edit-human-name');
   this.target = $target;
@@ -123,8 +121,6 @@ Drupal.viewsUi.FormFieldFiller = function ($target, exclude, replace, suffix) {
  */
 Drupal.viewsUi.FormFieldFiller.prototype.bind = function () {
 
-  "use strict";
-
   this.unbind();
   // Populate the form field when the source changes.
   this.source.bind('keyup.viewsUi change.viewsUi', this.populate);
@@ -136,8 +132,6 @@ Drupal.viewsUi.FormFieldFiller.prototype.bind = function () {
  * Get the source form field value as altered by the passed-in parameters.
  */
 Drupal.viewsUi.FormFieldFiller.prototype.getTransliterated = function () {
-
-  "use strict";
 
   var from = this.source.val();
   if (this.exclude) {
@@ -151,8 +145,6 @@ Drupal.viewsUi.FormFieldFiller.prototype.getTransliterated = function () {
  */
 Drupal.viewsUi.FormFieldFiller.prototype._populate = function () {
 
-  "use strict";
-
   var transliterated = this.getTransliterated();
   this.target.val(transliterated);
 };
@@ -161,8 +153,6 @@ Drupal.viewsUi.FormFieldFiller.prototype._populate = function () {
  * Stop prepopulating the form fields.
  */
 Drupal.viewsUi.FormFieldFiller.prototype._unbind = function () {
-
-  "use strict";
 
   this.source.unbind('keyup.viewsUi change.viewsUi', this.populate);
   this.target.unbind('focus.viewsUi', this.unbind);
@@ -173,16 +163,12 @@ Drupal.viewsUi.FormFieldFiller.prototype._unbind = function () {
  */
 Drupal.viewsUi.FormFieldFiller.prototype.rebind = function ($fields) {
 
-  "use strict";
-
   this.target = $fields;
   this.bind();
 };
 
 Drupal.behaviors.addItemForm = {};
 Drupal.behaviors.addItemForm.attach = function (context) {
-
-  "use strict";
 
   var $ = jQuery;
   // The add item form may have an id of views-ui-add-item-form--n.
@@ -196,8 +182,6 @@ Drupal.behaviors.addItemForm.attach = function (context) {
 
 Drupal.viewsUi.addItemForm = function($form) {
 
-  "use strict";
-
   this.$form = $form;
   this.$form.find('.views-filterable-options :checkbox').click(jQuery.proxy(this.handleCheck, this));
   // Find the wrapper of the displayed text.
@@ -207,8 +191,6 @@ Drupal.viewsUi.addItemForm = function($form) {
 };
 
 Drupal.viewsUi.addItemForm.prototype.handleCheck = function (event) {
-
-  "use strict";
 
   var $target = jQuery(event.target);
   var label = jQuery.trim($target.next().text());
@@ -240,8 +222,6 @@ Drupal.viewsUi.addItemForm.prototype.handleCheck = function (event) {
  */
 Drupal.viewsUi.addItemForm.prototype.refreshCheckedItems = function() {
 
-  "use strict";
-
   // Perhaps we should precache the text div, too.
   this.$selected_div.find('.views-selected-options').html(this.checkedItems.join(', '));
   Drupal.viewsUi.resizeModal('', true);
@@ -255,8 +235,6 @@ Drupal.viewsUi.addItemForm.prototype.refreshCheckedItems = function() {
 Drupal.behaviors.viewsUiRenderAddViewButton = {};
 
 Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context) {
-
-  "use strict";
 
   var $ = jQuery;
   // Build the add display menu and pull the display input buttons into it.
@@ -309,8 +287,6 @@ Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context) {
  */
 Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu = function ($trigger) {
 
-  "use strict";
-
   $trigger.parent().toggleClass('open');
   $trigger.next().slideToggle('fast');
 };
@@ -318,8 +294,6 @@ Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu = function ($trigger) {
 Drupal.behaviors.viewsUiSearchOptions = {};
 
 Drupal.behaviors.viewsUiSearchOptions.attach = function (context) {
-
-  "use strict";
 
   var $ = jQuery;
   // The add item form may have an id of views-ui-add-item-form--n.
@@ -339,8 +313,6 @@ Drupal.behaviors.viewsUiSearchOptions.attach = function (context) {
  * containing "taxonomy" in their label.
  */
 Drupal.viewsUi.OptionsSearch = function ($form) {
-
-  "use strict";
 
   this.$form = $form;
   // Add a keyup handler to the search box.
@@ -368,8 +340,6 @@ Drupal.viewsUi.OptionsSearch = function ($form) {
  */
 Drupal.viewsUi.OptionsSearch.prototype.getOptions = function ($allOptions) {
 
-  "use strict";
-
   var $ = jQuery;
   var i, $label, $description, $option;
   var options = [];
@@ -394,8 +364,6 @@ Drupal.viewsUi.OptionsSearch.prototype.getOptions = function ($allOptions) {
  * Keyup handler for the search box that hides or shows the relevant options.
  */
 Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function () {
-
-  "use strict";
 
   var found, i, j, option, search, words, wordsLength, zebraClass, zebraCounter;
 
@@ -439,8 +407,6 @@ Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function () {
 Drupal.behaviors.viewsUiPreview = {};
 Drupal.behaviors.viewsUiPreview.attach = function (context) {
 
-  "use strict";
-
   var $ = jQuery;
 
   // Only act on the edit view form.
@@ -469,8 +435,6 @@ Drupal.behaviors.viewsUiPreview.attach = function (context) {
 Drupal.behaviors.viewsUiRearrangeFilter = {};
 Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
 
-  "use strict";
-
   var $ = jQuery;
   // Only act on the rearrange filter form.
   if (typeof Drupal.tableDrag === 'undefined' || typeof Drupal.tableDrag['views-rearrange-filters'] === 'undefined') {
@@ -488,8 +452,6 @@ Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
  * Improve the UI of the rearrange filters dialog box.
  */
 Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
-
-  "use strict";
 
   var $ = jQuery;
   // Keep a reference to the <table> being altered and to the div containing
@@ -547,8 +509,6 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks = function () {
 
-  "use strict";
-
   var $ = jQuery;
 
   // Insert a link for adding a new group at the top of the page, and make it
@@ -582,8 +542,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks 
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.clickAddGroupButton = function () {
 
-  "use strict";
-
   // Due to conflicts between Drupal core's AJAX system and the Views AJAX
   // system, the only way to get this to work seems to be to trigger both the
   // .mousedown() and .submit() events.
@@ -601,8 +559,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.clickAddGroupButton = function (
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.clickRemoveGroupButton = function (event) {
 
-  "use strict";
-
   // For some reason, here we only need to trigger .submit(), unlike for
   // Drupal.viewsUi.rearrangeFilterHandler.prototype.clickAddGroupButton()
   // where we had to trigger .mousedown() also.
@@ -615,8 +571,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.clickRemoveGroupButton = functio
  * duplicate it between any subsequent groups.
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = function () {
-
-  "use strict";
 
   var $ = jQuery;
   var dropdowns, newRow;
@@ -658,8 +612,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = functi
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.syncGroupsOperators = function () {
 
-  "use strict";
-
   if (this.dropdowns.length < 2) {
     // We only have one dropdown (or none at all), so there's nothing to sync.
     return;
@@ -675,8 +627,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.syncGroupsOperators = function (
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.operatorChangeHandler = function (event) {
 
-  "use strict";
-
   var $ = jQuery;
   var $target = $(event.target);
   var operators = this.dropdowns.find('select').not($target);
@@ -686,8 +636,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.operatorChangeHandler = function
 };
 
 Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
-
-  "use strict";
 
   var tableDrag = Drupal.tableDrag['views-rearrange-filters'];
   var filterHandler = this;
@@ -762,8 +710,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function () {
 
-  "use strict";
-
   var $ = jQuery;
   for (var i = 0; i < this.draggableRows.length; i++) {
     // Within the row, the operator labels are displayed inside the first table
@@ -810,8 +756,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function 
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.updateRowspans = function () {
 
-  "use strict";
-
   var $ = jQuery;
   var i, $row, $currentEmptyRow, draggableCount, $operatorCell;
   var rows = $(this.table).find('tr');
@@ -847,8 +791,6 @@ Drupal.behaviors.viewsFilterConfigSelectAll = {};
  */
 Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
 
-  "use strict";
-
   var $ = jQuery;
   // Show the select all checkbox.
   $('#views-ui-config-item-form div.form-item-options-value-all', context).once(function() {
@@ -878,8 +820,6 @@ Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
 Drupal.behaviors.viewsRemoveIconClass = {};
 Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
 
-  "use strict";
-
   jQuery(context).find('.dropbutton').once('dropbutton-icon', function () {
     jQuery(this).find('.icon').removeClass('icon');
   });
@@ -890,8 +830,6 @@ Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
  */
 Drupal.behaviors.viewsUiCheckboxify = {};
 Drupal.behaviors.viewsUiCheckboxify.attach = function () {
-
-  "use strict";
 
   var $ = jQuery;
   var $buttons = $('#edit-options-expose-button-button, #edit-options-group-button-button').once('views-ui-checkboxify');
@@ -908,8 +846,6 @@ Drupal.behaviors.viewsUiCheckboxify.attach = function () {
  */
 Drupal.behaviors.viewsUiChangeDefaultWidget = {};
 Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
-
-  "use strict";
 
   var $ = jQuery;
   function change_default_widget(multiple) {
@@ -940,8 +876,6 @@ Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
  */
 Drupal.viewsUi.Checkboxifier = function (button) {
 
-  "use strict";
-
   var $ = jQuery;
   this.$button = $(button);
   this.$parent = this.$button.parent('div.views-expose, div.views-grouped');
@@ -959,8 +893,6 @@ Drupal.viewsUi.Checkboxifier = function (button) {
  */
 Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
 
-  "use strict";
-
   this.$button.mousedown();
   this.$button.submit();
 };
@@ -970,8 +902,6 @@ Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
  */
 Drupal.behaviors.viewsUiOverrideSelect = {};
 Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
-
-  "use strict";
 
   var $ = jQuery;
   $('#edit-override-dropdown', context).once('views-ui-override-button-text', function() {
@@ -1002,8 +932,6 @@ Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
 };
 
 Drupal.viewsUi.resizeModal = function (e, no_shrink) {
-
-  "use strict";
 
   var $ = jQuery;
   var $modal = $('.views-ui-dialog');
@@ -1097,8 +1025,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
 jQuery(function() {
 
-  "use strict";
-
   jQuery(window).bind('resize', Drupal.viewsUi.resizeModal);
   jQuery(window).bind('scroll', Drupal.viewsUi.resizeModal);
 });
+
+})(jQuery);
