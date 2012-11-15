@@ -17,8 +17,8 @@ Drupal.behaviors.viewsUiEditView.attach = function () {
 
   // Only show the SQL rewrite warning when the user has chosen the
   // corresponding checkbox.
-  jQuery('#edit-query-options-disable-sql-rewrite').click(function () {
-    jQuery('.sql-rewrite-warning').toggleClass('js-hide');
+  $('#edit-query-options-disable-sql-rewrite').click(function () {
+    $('.sql-rewrite-warning').toggleClass('js-hide');
   });
 };
 
@@ -30,7 +30,6 @@ Drupal.behaviors.viewsUiAddView = {};
  */
 Drupal.behaviors.viewsUiAddView.attach = function (context) {
 
-  var $ = jQuery;
   var exclude, replace, suffix;
   // Set up regular expressions to allow only numbers, letters, and dashes.
   exclude = new RegExp('[^a-z0-9\\-]+', 'g');
@@ -96,7 +95,6 @@ Drupal.behaviors.viewsUiAddView.attach = function (context) {
  */
 Drupal.viewsUi.FormFieldFiller = function ($target, exclude, replace, suffix) {
 
-  var $ = jQuery;
   this.source = $('#edit-human-name');
   this.target = $target;
   this.exclude = exclude || false;
@@ -170,7 +168,6 @@ Drupal.viewsUi.FormFieldFiller.prototype.rebind = function ($fields) {
 Drupal.behaviors.addItemForm = {};
 Drupal.behaviors.addItemForm.attach = function (context) {
 
-  var $ = jQuery;
   // The add item form may have an id of views-ui-add-item-form--n.
   var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
   // Make sure we don't add more than one event handler to the same form.
@@ -183,7 +180,7 @@ Drupal.behaviors.addItemForm.attach = function (context) {
 Drupal.viewsUi.addItemForm = function($form) {
 
   this.$form = $form;
-  this.$form.find('.views-filterable-options :checkbox').click(jQuery.proxy(this.handleCheck, this));
+  this.$form.find('.views-filterable-options :checkbox').click($.proxy(this.handleCheck, this));
   // Find the wrapper of the displayed text.
   this.$selected_div = this.$form.find('.views-selected-options').parent();
   this.$selected_div.hide();
@@ -192,15 +189,15 @@ Drupal.viewsUi.addItemForm = function($form) {
 
 Drupal.viewsUi.addItemForm.prototype.handleCheck = function (event) {
 
-  var $target = jQuery(event.target);
-  var label = jQuery.trim($target.next().text());
+  var $target = $(event.target);
+  var label = $.trim($target.next().text());
   // Add/remove the checked item to the list.
   if ($target.is(':checked')) {
     this.$selected_div.show();
     this.checkedItems.push(label);
   }
   else {
-    var position = jQuery.inArray(label, this.checkedItems);
+    var position = $.inArray(label, this.checkedItems);
     // Delete the item from the list and take sure that the list doesn't have undefined items left.
     for (var i = 0; i < this.checkedItems.length; i++) {
       if (i === position) {
@@ -236,7 +233,6 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {};
 
 Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context) {
 
-  var $ = jQuery;
   // Build the add display menu and pull the display input buttons into it.
   var $menu = $('#views-display-menu-tabs', context).once('views-ui-render-add-view-button-processed');
 
@@ -295,7 +291,6 @@ Drupal.behaviors.viewsUiSearchOptions = {};
 
 Drupal.behaviors.viewsUiSearchOptions.attach = function (context) {
 
-  var $ = jQuery;
   // The add item form may have an id of views-ui-add-item-form--n.
   var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
   // Make sure we don't add more than one event handler to the same form.
@@ -317,7 +312,7 @@ Drupal.viewsUi.OptionsSearch = function ($form) {
   this.$form = $form;
   // Add a keyup handler to the search box.
   this.$searchBox = this.$form.find('#edit-options-search');
-  this.$searchBox.keyup(jQuery.proxy(this.handleKeyup, this));
+  this.$searchBox.keyup($.proxy(this.handleKeyup, this));
   // Get a list of option labels and their corresponding divs and maintain it
   // in memory, so we have as little overhead as possible at keyup time.
   this.options = this.getOptions(this.$form.find('.filterable-option'));
@@ -340,7 +335,6 @@ Drupal.viewsUi.OptionsSearch = function ($form) {
  */
 Drupal.viewsUi.OptionsSearch.prototype.getOptions = function ($allOptions) {
 
-  var $ = jQuery;
   var i, $label, $description, $option;
   var options = [];
   var length = $allOptions.length;
@@ -407,8 +401,6 @@ Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function () {
 Drupal.behaviors.viewsUiPreview = {};
 Drupal.behaviors.viewsUiPreview.attach = function (context) {
 
-  var $ = jQuery;
-
   // Only act on the edit view form.
   var contextualFiltersBucket = $('.views-display-column .views-ui-display-tab-bucket.contextual-filters', context);
   if (contextualFiltersBucket.length === 0) {
@@ -435,7 +427,6 @@ Drupal.behaviors.viewsUiPreview.attach = function (context) {
 Drupal.behaviors.viewsUiRearrangeFilter = {};
 Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
 
-  var $ = jQuery;
   // Only act on the rearrange filter form.
   if (typeof Drupal.tableDrag === 'undefined' || typeof Drupal.tableDrag['views-rearrange-filters'] === 'undefined') {
     return;
@@ -453,7 +444,6 @@ Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
  */
 Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
 
-  var $ = jQuery;
   // Keep a reference to the <table> being altered and to the div containing
   // the filter groups operator dropdown (if it exists).
   this.table = table;
@@ -509,8 +499,6 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks = function () {
 
-  var $ = jQuery;
-
   // Insert a link for adding a new group at the top of the page, and make it
   // match the action links styling used in a typical page.tpl.php. Note that
   // Drupal does not provide a theme function for this markup, so this is the
@@ -562,7 +550,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.clickRemoveGroupButton = functio
   // For some reason, here we only need to trigger .submit(), unlike for
   // Drupal.viewsUi.rearrangeFilterHandler.prototype.clickAddGroupButton()
   // where we had to trigger .mousedown() also.
-  jQuery('input#' + event.data.buttonId, this.table).submit();
+  $('input#' + event.data.buttonId, this.table).submit();
   event.preventDefault();
 };
 
@@ -572,7 +560,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.clickRemoveGroupButton = functio
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = function () {
 
-  var $ = jQuery;
   var dropdowns, newRow;
 
   var titleRows = $('tr.views-group-title'), titleRow;
@@ -617,7 +604,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.syncGroupsOperators = function (
     return;
   }
 
-  this.dropdowns.change(jQuery.proxy(this, 'operatorChangeHandler'));
+  this.dropdowns.change($.proxy(this, 'operatorChangeHandler'));
 };
 
 /**
@@ -627,7 +614,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.syncGroupsOperators = function (
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.operatorChangeHandler = function (event) {
 
-  var $ = jQuery;
   var $target = $(event.target);
   var operators = this.dropdowns.find('select').not($target);
 
@@ -656,7 +642,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
       // Make sure the row that just got moved (this.group) is inside one of
       // the filter groups (i.e. below an empty marker row or a draggable). If
       // it isn't, move it down one.
-      var thisRow = jQuery(this.group);
+      var thisRow = $(this.group);
       var previousRow = thisRow.prev('tr');
       if (previousRow.length && !previousRow.hasClass('group-message') && !previousRow.hasClass('draggable')) {
         // Move the dragged row down one.
@@ -676,8 +662,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
    * Override the onDrop method from tabledrag.js.
    */
   tableDrag.onDrop = function () {
-    var $ = jQuery;
-
     // If the tabledrag change marker (i.e., the "*") has been inserted inside
     // a row after the operator label (i.e., "And" or "Or") rearrange the items
     // so the operator label continues to appear last.
@@ -710,7 +694,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function () {
 
-  var $ = jQuery;
   for (var i = 0; i < this.draggableRows.length; i++) {
     // Within the row, the operator labels are displayed inside the first table
     // cell (next to the filter name).
@@ -756,7 +739,6 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function 
  */
 Drupal.viewsUi.rearrangeFilterHandler.prototype.updateRowspans = function () {
 
-  var $ = jQuery;
   var i, $row, $currentEmptyRow, draggableCount, $operatorCell;
   var rows = $(this.table).find('tr');
   var length = rows.length;
@@ -791,7 +773,6 @@ Drupal.behaviors.viewsFilterConfigSelectAll = {};
  */
 Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
 
-  var $ = jQuery;
   // Show the select all checkbox.
   $('#views-ui-config-item-form div.form-item-options-value-all', context).once(function() {
     $(this).show();
@@ -820,8 +801,8 @@ Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
 Drupal.behaviors.viewsRemoveIconClass = {};
 Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
 
-  jQuery(context).find('.dropbutton').once('dropbutton-icon', function () {
-    jQuery(this).find('.icon').removeClass('icon');
+  $(context).find('.dropbutton').once('dropbutton-icon', function () {
+    $(this).find('.icon').removeClass('icon');
   });
 };
 
@@ -831,7 +812,6 @@ Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
 Drupal.behaviors.viewsUiCheckboxify = {};
 Drupal.behaviors.viewsUiCheckboxify.attach = function () {
 
-  var $ = jQuery;
   var $buttons = $('#edit-options-expose-button-button, #edit-options-group-button-button').once('views-ui-checkboxify');
   var length = $buttons.length;
   var i;
@@ -847,7 +827,6 @@ Drupal.behaviors.viewsUiCheckboxify.attach = function () {
 Drupal.behaviors.viewsUiChangeDefaultWidget = {};
 Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
 
-  var $ = jQuery;
   function change_default_widget(multiple) {
     if (multiple) {
       $('input.default-radios').hide();
@@ -876,7 +855,6 @@ Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
  */
 Drupal.viewsUi.Checkboxifier = function (button) {
 
-  var $ = jQuery;
   this.$button = $(button);
   this.$parent = this.$button.parent('div.views-expose, div.views-grouped');
   this.$input = this.$parent.find('input:checkbox, input:radio');
@@ -903,7 +881,6 @@ Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
 Drupal.behaviors.viewsUiOverrideSelect = {};
 Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
 
-  var $ = jQuery;
   $('#edit-override-dropdown', context).once('views-ui-override-button-text', function() {
     // Closures! :(
     var $submit = $('#edit-submit', context);
@@ -933,7 +910,6 @@ Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
 
 Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
-  var $ = jQuery;
   var $modal = $('.views-ui-dialog');
   var $scroll = $('.scroll', $modal);
   if ($modal.size() === 0 || $modal.css('display') === 'none') {
@@ -1023,10 +999,9 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
 };
 
-jQuery(function() {
-
-  jQuery(window).bind('resize', Drupal.viewsUi.resizeModal);
-  jQuery(window).bind('scroll', Drupal.viewsUi.resizeModal);
+$(function() {
+  $(window).bind('resize', Drupal.viewsUi.resizeModal);
+  $(window).bind('scroll', Drupal.viewsUi.resizeModal);
 });
 
 })(jQuery);
