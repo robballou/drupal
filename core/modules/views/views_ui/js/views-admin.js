@@ -910,14 +910,16 @@ Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
 
 Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
-  var $modal = $('.views-ui-dialog');
-  var $scroll = $('.scroll', $modal);
+  var $modal = $('.views-ui-dialog'),
+    $scroll = $('.scroll', $modal);
   if ($modal.size() === 0 || $modal.css('display') === 'none') {
     return;
   }
 
-  var maxWidth = parseInt($(window).width() * 0.85, 10); // 70% of window
-  var minWidth = parseInt($(window).width() * 0.6, 10); // 70% of window
+  var windowWidth = $(window).width(),
+    windowHeight = $(window).height(),
+    maxWidth = parseInt(windowWidth * 0.85, 10), // 70% of window
+    minWidth = parseInt(windowWidth * 0.6, 10); // 70% of window
 
   // Set the modal to the minwidth so that our width calculation of
   // children works.
@@ -925,8 +927,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   var width = minWidth;
 
   // Don't let the window get more than 80% of the display high.
-  var maxHeight = parseInt($(window).height() * 0.8, 10);
-  var minHeight = 200;
+  var maxHeight = parseInt(windowHeight * 0.8, 10),
+    minHeight = 200;
   if (no_shrink) {
     minHeight = $modal.height();
   }
@@ -979,8 +981,8 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   }
 
   // Get where we should move content to
-  var top = ($(window).height() / 2) - (height / 2);
-  var left = ($(window).width() / 2) - (width / 2);
+  var top = (windowHeight / 2) - (height / 2);
+  var left = (windowWidth / 2) - (width / 2);
 
   $modal.css({
     'top': top + 'px',
