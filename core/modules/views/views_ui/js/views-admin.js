@@ -1000,8 +1000,12 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 };
 
 $(function() {
-  $(window).bind('resize', Drupal.viewsUi.resizeModal);
-  $(window).bind('scroll', Drupal.viewsUi.resizeModal);
+  // $(window).bind('resize', Drupal.viewsUi.resizeModal);
+  // $(window).bind('scroll', Drupal.viewsUi.resizeModal);
+  $(window).on({
+    resize: Drupal.viewsUi.resizeModal,
+    scroll: Drupal.viewsUi.resizeModal
+  });
 });
 
 })(jQuery);
