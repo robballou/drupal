@@ -8,71 +8,71 @@ Drupal.viewsUi = {};
 
 "use strict";
 
-Drupal.behaviors.viewsUiEditView = {};
-
 /**
  * Improve the user experience of the views edit interface.
  */
-Drupal.behaviors.viewsUiEditView.attach = function () {
+Drupal.behaviors.viewsUiEditView = {
+  attach: function () {
 
-  // Only show the SQL rewrite warning when the user has chosen the
-  // corresponding checkbox.
-  $('#edit-query-options-disable-sql-rewrite').click(function () {
-    $('.sql-rewrite-warning').toggleClass('js-hide');
-  });
+    // Only show the SQL rewrite warning when the user has chosen the
+    // corresponding checkbox.
+    $('#edit-query-options-disable-sql-rewrite').click(function () {
+      $('.sql-rewrite-warning').toggleClass('js-hide');
+    });
+  }
 };
-
-Drupal.behaviors.viewsUiAddView = {};
 
 /**
  * In the add view wizard, use the view name to prepopulate form fields such as
  * page title and menu link.
  */
-Drupal.behaviors.viewsUiAddView.attach = function (context) {
+Drupal.behaviors.viewsUiAddView = {
+  attach: function (context) {
 
-  var exclude, replace, suffix;
-  // Set up regular expressions to allow only numbers, letters, and dashes.
-  exclude = new RegExp('[^a-z0-9\\-]+', 'g');
-  replace = '-';
+    var exclude, replace, suffix;
+    // Set up regular expressions to allow only numbers, letters, and dashes.
+    exclude = new RegExp('[^a-z0-9\\-]+', 'g');
+    replace = '-';
 
-  // The page title, block title, and menu link fields can all be prepopulated
-  // with the view name - no regular expression needed.
-  var $fields = $(context).find('[id^="edit-page-title"], [id^="edit-block-title"], [id^="edit-page-link-properties-title"]');
-  if ($fields.length) {
-    if (!this.fieldsFiller) {
-      this.fieldsFiller = new Drupal.viewsUi.FormFieldFiller($fields);
+    // The page title, block title, and menu link fields can all be prepopulated
+    // with the view name - no regular expression needed.
+    var $fields = $(context).find('[id^="edit-page-title"], [id^="edit-block-title"], [id^="edit-page-link-properties-title"]');
+    if ($fields.length) {
+      if (!this.fieldsFiller) {
+        this.fieldsFiller = new Drupal.viewsUi.FormFieldFiller($fields);
+      }
+      else {
+        // After an AJAX response, this.fieldsFiller will still have event
+        // handlers bound to the old version of the form fields (which don't exist
+        // anymore). The event handlers need to be unbound and then rebound to the
+        // new markup. Note that jQuery.live is difficult to make work in this
+        // case because the IDs of the form fields change on every AJAX response.
+        this.fieldsFiller.rebind($fields);
+      }
     }
-    else {
-      // After an AJAX response, this.fieldsFiller will still have event
-      // handlers bound to the old version of the form fields (which don't exist
-      // anymore). The event handlers need to be unbound and then rebound to the
-      // new markup. Note that jQuery.live is difficult to make work in this
-      // case because the IDs of the form fields change on every AJAX response.
-      this.fieldsFiller.rebind($fields);
-    }
-  }
 
-  // Prepopulate the path field with a URLified version of the view name.
-  var $pathField = $(context).find('[id^="edit-page-path"]');
-  if ($pathField.length) {
-    if (!this.pathFiller) {
-      this.pathFiller = new Drupal.viewsUi.FormFieldFiller($pathField, exclude, replace);
+    // Prepopulate the path field with a URLified version of the view name.
+    var $pathField = $(context).find('[id^="edit-page-path"]');
+    if ($pathField.length) {
+      if (!this.pathFiller) {
+        this.pathFiller = new Drupal.viewsUi.FormFieldFiller($pathField, exclude, replace);
+      }
+      else {
+        this.pathFiller.rebind($pathField);
+      }
     }
-    else {
-      this.pathFiller.rebind($pathField);
-    }
-  }
 
-  // Populate the RSS feed field with a URLified version of the view name, and
-  // an .xml suffix (to make it unique).
-  var $feedField = $(context).find('[id^="edit-page-feed-properties-path"]');
-  if ($feedField.length) {
-    if (!this.feedFiller) {
-      suffix = '.xml';
-      this.feedFiller = new Drupal.viewsUi.FormFieldFiller($feedField, exclude, replace, suffix);
-    }
-    else {
-      this.feedFiller.rebind($feedField);
+    // Populate the RSS feed field with a URLified version of the view name, and
+    // an .xml suffix (to make it unique).
+    var $feedField = $(context).find('[id^="edit-page-feed-properties-path"]');
+    if ($feedField.length) {
+      if (!this.feedFiller) {
+        suffix = '.xml';
+        this.feedFiller = new Drupal.viewsUi.FormFieldFiller($feedField, exclude, replace, suffix);
+      }
+      else {
+        this.feedFiller.rebind($feedField);
+      }
     }
   }
 };
@@ -165,15 +165,16 @@ Drupal.viewsUi.FormFieldFiller.prototype.rebind = function ($fields) {
   this.bind();
 };
 
-Drupal.behaviors.addItemForm = {};
-Drupal.behaviors.addItemForm.attach = function (context) {
+Drupal.behaviors.addItemForm = {
+  attach: function (context) {
 
-  // The add item form may have an id of views-ui-add-item-form--n.
-  var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
-  // Make sure we don't add more than one event handler to the same form.
-  $form = $form.once('views-ui-add-item-form');
-  if ($form.length) {
-    new Drupal.viewsUi.addItemForm($form);
+    // The add item form may have an id of views-ui-add-item-form--n.
+    var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
+    // Make sure we don't add more than one event handler to the same form.
+    $form = $form.once('views-ui-add-item-form');
+    if ($form.length) {
+      new Drupal.viewsUi.addItemForm($form);
+    }
   }
 };
 
@@ -229,52 +230,52 @@ Drupal.viewsUi.addItemForm.prototype.refreshCheckedItems = function() {
  * The following behavior detaches the <input> elements from the DOM, wraps them
  * in an unordered list, then appends them to the list of tabs.
  */
-Drupal.behaviors.viewsUiRenderAddViewButton = {};
+Drupal.behaviors.viewsUiRenderAddViewButton = {
+  attach: function (context) {
 
-Drupal.behaviors.viewsUiRenderAddViewButton.attach = function (context) {
+    // Build the add display menu and pull the display input buttons into it.
+    var $menu = $('#views-display-menu-tabs', context).once('views-ui-render-add-view-button-processed');
 
-  // Build the add display menu and pull the display input buttons into it.
-  var $menu = $('#views-display-menu-tabs', context).once('views-ui-render-add-view-button-processed');
-
-  if (!$menu.length) {
-    return;
-  }
-  var $addDisplayDropdown = $('<li class="add"><a href="#"><span class="icon add"></span>' + Drupal.t('Add') + '</a><ul class="action-list" style="display:none;"></ul></li>');
-  var $displayButtons = $menu.nextAll('input.add-display').detach();
-  $displayButtons.appendTo($addDisplayDropdown.find('.action-list')).wrap('<li>')
-    .parent().first().addClass('first').end().last().addClass('last');
-  // Remove the 'Add ' prefix from the button labels since they're being palced
-  // in an 'Add' dropdown.
-  // @todo This assumes English, but so does $addDisplayDropdown above. Add
-  //   support for translation.
-  $displayButtons.each(function () {
-    var label = $(this).val();
-    if (label.substr(0, 4) === 'Add ') {
-      $(this).val(label.substr(4));
+    if (!$menu.length) {
+      return;
     }
-  });
-  $addDisplayDropdown.appendTo($menu);
+    var $addDisplayDropdown = $('<li class="add"><a href="#"><span class="icon add"></span>' + Drupal.t('Add') + '</a><ul class="action-list" style="display:none;"></ul></li>');
+    var $displayButtons = $menu.nextAll('input.add-display').detach();
+    $displayButtons.appendTo($addDisplayDropdown.find('.action-list')).wrap('<li>')
+      .parent().first().addClass('first').end().last().addClass('last');
+    // Remove the 'Add ' prefix from the button labels since they're being palced
+    // in an 'Add' dropdown.
+    // @todo This assumes English, but so does $addDisplayDropdown above. Add
+    //   support for translation.
+    $displayButtons.each(function () {
+      var label = $(this).val();
+      if (label.substr(0, 4) === 'Add ') {
+        $(this).val(label.substr(4));
+      }
+    });
+    $addDisplayDropdown.appendTo($menu);
 
-  // Add the click handler for the add display button
-  $('li.add > a', $menu).bind('click', function (event) {
-    event.preventDefault();
-    var $trigger = $(this);
-    Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
-  });
-  // Add a mouseleave handler to close the dropdown when the user mouses
-  // away from the item. We use mouseleave instead of mouseout because
-  // the user is going to trigger mouseout when she moves from the trigger
-  // link to the sub menu items.
-  // We use the live binder because the open class on this item will be
-  // toggled on and off and we want the handler to take effect in the cases
-  // that the class is present, but not when it isn't.
-  $('li.add', $menu).on('mouseleave', function () {
-    var $this = $(this);
-    var $trigger = $this.children('a[href="#"]');
-    if ($this.children('.action-list').is(':visible')) {
+    // Add the click handler for the add display button
+    $('li.add > a', $menu).bind('click', function (event) {
+      event.preventDefault();
+      var $trigger = $(this);
       Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
-    }
-  });
+    });
+    // Add a mouseleave handler to close the dropdown when the user mouses
+    // away from the item. We use mouseleave instead of mouseout because
+    // the user is going to trigger mouseout when she moves from the trigger
+    // link to the sub menu items.
+    // We use the live binder because the open class on this item will be
+    // toggled on and off and we want the handler to take effect in the cases
+    // that the class is present, but not when it isn't.
+    $('li.add', $menu).on('mouseleave', function () {
+      var $this = $(this);
+      var $trigger = $this.children('a[href="#"]');
+      if ($this.children('.action-list').is(':visible')) {
+        Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
+      }
+    });
+  }
 };
 
 /**
@@ -287,16 +288,16 @@ Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu = function ($trigger) {
   $trigger.next().slideToggle('fast');
 };
 
-Drupal.behaviors.viewsUiSearchOptions = {};
+Drupal.behaviors.viewsUiSearchOptions = {
+  attach: function (context) {
 
-Drupal.behaviors.viewsUiSearchOptions.attach = function (context) {
-
-  // The add item form may have an id of views-ui-add-item-form--n.
-  var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
-  // Make sure we don't add more than one event handler to the same form.
-  $form = $form.once('views-ui-filter-options');
-  if ($form.length) {
-    new Drupal.viewsUi.OptionsSearch($form);
+    // The add item form may have an id of views-ui-add-item-form--n.
+    var $form = $(context).find('form[id^="views-ui-add-item-form"]').first();
+    // Make sure we don't add more than one event handler to the same form.
+    $form = $form.once('views-ui-filter-options');
+    if ($form.length) {
+      new Drupal.viewsUi.OptionsSearch($form);
+    }
   }
 };
 
@@ -398,44 +399,46 @@ Drupal.viewsUi.OptionsSearch.prototype.handleKeyup = function () {
   }
 };
 
-Drupal.behaviors.viewsUiPreview = {};
-Drupal.behaviors.viewsUiPreview.attach = function (context) {
+Drupal.behaviors.viewsUiPreview = {
+  attach: function (context) {
 
-  // Only act on the edit view form.
-  var contextualFiltersBucket = $('.views-display-column .views-ui-display-tab-bucket.contextual-filters', context);
-  if (contextualFiltersBucket.length === 0) {
-    return;
-  }
+    // Only act on the edit view form.
+    var contextualFiltersBucket = $('.views-display-column .views-ui-display-tab-bucket.contextual-filters', context);
+    if (contextualFiltersBucket.length === 0) {
+      return;
+    }
 
-  // If the display has no contextual filters, hide the form where you enter
-  // the contextual filters for the live preview. If it has contextual filters,
-  // show the form.
-  var contextualFilters = $('.views-display-setting a', contextualFiltersBucket);
-  if (contextualFilters.length) {
-    $('#preview-args').parent().show();
-  }
-  else {
-    $('#preview-args').parent().hide();
-  }
+    // If the display has no contextual filters, hide the form where you enter
+    // the contextual filters for the live preview. If it has contextual filters,
+    // show the form.
+    var contextualFilters = $('.views-display-setting a', contextualFiltersBucket);
+    if (contextualFilters.length) {
+      $('#preview-args').parent().show();
+    }
+    else {
+      $('#preview-args').parent().hide();
+    }
 
-  // Executes an initial preview.
-  if ($('#edit-displays-live-preview').once('edit-displays-live-preview').is(':checked')) {
-    $('#preview-submit').once('edit-displays-live-preview').click();
+    // Executes an initial preview.
+    if ($('#edit-displays-live-preview').once('edit-displays-live-preview').is(':checked')) {
+      $('#preview-submit').once('edit-displays-live-preview').click();
+    }
   }
 };
 
-Drupal.behaviors.viewsUiRearrangeFilter = {};
-Drupal.behaviors.viewsUiRearrangeFilter.attach = function (context) {
+Drupal.behaviors.viewsUiRearrangeFilter = {
+  attach: function (context) {
 
-  // Only act on the rearrange filter form.
-  if (typeof Drupal.tableDrag === 'undefined' || typeof Drupal.tableDrag['views-rearrange-filters'] === 'undefined') {
-    return;
-  }
+    // Only act on the rearrange filter form.
+    if (typeof Drupal.tableDrag === 'undefined' || typeof Drupal.tableDrag['views-rearrange-filters'] === 'undefined') {
+      return;
+    }
 
-  var table = $('#views-rearrange-filters', context).once('views-rearrange-filters');
-  var operator = $('.form-item-filter-groups-operator', context).once('views-rearrange-filters');
-  if (table.length) {
-    new Drupal.viewsUi.rearrangeFilterHandler(table, operator);
+    var table = $('#views-rearrange-filters', context).once('views-rearrange-filters');
+    var operator = $('.form-item-filter-groups-operator', context).once('views-rearrange-filters');
+    if (table.length) {
+      new Drupal.viewsUi.rearrangeFilterHandler(table, operator);
+    }
   }
 };
 
@@ -766,57 +769,59 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.updateRowspans = function () {
   }
 };
 
-Drupal.behaviors.viewsFilterConfigSelectAll = {};
-
 /**
  * Add a select all checkbox, which checks each checkbox at once.
  */
-Drupal.behaviors.viewsFilterConfigSelectAll.attach = function(context) {
+Drupal.behaviors.viewsFilterConfigSelectAll = {
+  attach: function(context) {
 
-  // Show the select all checkbox.
-  $('#views-ui-config-item-form div.form-item-options-value-all', context).once(function() {
-    $(this).show();
-  })
-  .find('input[type=checkbox]')
-  .click(function() {
-    var checked = $(this).is(':checked');
-    // Update all checkbox beside the select all checkbox.
-    $(this).parents('.form-checkboxes').find('input[type=checkbox]').each(function() {
-      $(this).attr('checked', checked);
+    // Show the select all checkbox.
+    $('#views-ui-config-item-form div.form-item-options-value-all', context).once(function() {
+      $(this).show();
+    })
+    .find('input[type=checkbox]')
+    .click(function() {
+      var checked = $(this).is(':checked');
+      // Update all checkbox beside the select all checkbox.
+      $(this).parents('.form-checkboxes').find('input[type=checkbox]').each(function() {
+        $(this).attr('checked', checked);
+      });
     });
-  });
-  // Uncheck the select all checkbox if any of the others are unchecked.
-  $('#views-ui-config-item-form div.form-type-checkbox').not($('.form-item-options-value-all')).find('input[type=checkbox]').each(function() {
-    $(this).click(function() {
-      if ($(this).is('checked') === 0) {
-        $('#edit-options-value-all').removeAttr('checked');
-      }
+    // Uncheck the select all checkbox if any of the others are unchecked.
+    $('#views-ui-config-item-form div.form-type-checkbox').not($('.form-item-options-value-all')).find('input[type=checkbox]').each(function() {
+      $(this).click(function() {
+        if ($(this).is('checked') === 0) {
+          $('#edit-options-value-all').removeAttr('checked');
+        }
+      });
     });
-  });
+  }
 };
 
 /**
  * Remove icon class from elements that are themed as buttons or dropbuttons.
  */
-Drupal.behaviors.viewsRemoveIconClass = {};
-Drupal.behaviors.viewsRemoveIconClass.attach = function (context) {
+Drupal.behaviors.viewsRemoveIconClass = {
+  attach: function (context) {
 
-  $(context).find('.dropbutton').once('dropbutton-icon', function () {
-    $(this).find('.icon').removeClass('icon');
-  });
+    $(context).find('.dropbutton').once('dropbutton-icon', function () {
+      $(this).find('.icon').removeClass('icon');
+    });
+  }
 };
 
 /**
  * Change "Expose filter" buttons into checkboxes.
  */
-Drupal.behaviors.viewsUiCheckboxify = {};
-Drupal.behaviors.viewsUiCheckboxify.attach = function () {
+Drupal.behaviors.viewsUiCheckboxify = {
+  attach: function () {
 
-  var $buttons = $('#edit-options-expose-button-button, #edit-options-group-button-button').once('views-ui-checkboxify');
-  var length = $buttons.length;
-  var i;
-  for (i = 0; i < length; i++) {
-    new Drupal.viewsUi.Checkboxifier($buttons[i]);
+    var $buttons = $('#edit-options-expose-button-button, #edit-options-group-button-button').once('views-ui-checkboxify');
+    var length = $buttons.length;
+    var i;
+    for (i = 0; i < length; i++) {
+      new Drupal.viewsUi.Checkboxifier($buttons[i]);
+    }
   }
 };
 
@@ -824,27 +829,28 @@ Drupal.behaviors.viewsUiCheckboxify.attach = function () {
  * Change the default widget to select the default group according to the
  * selected widget for the exposed group.
  */
-Drupal.behaviors.viewsUiChangeDefaultWidget = {};
-Drupal.behaviors.viewsUiChangeDefaultWidget.attach = function () {
+Drupal.behaviors.viewsUiChangeDefaultWidget = {
+  attach: function () {
 
-  function change_default_widget(multiple) {
-    if (multiple) {
-      $('input.default-radios').hide();
-      $('td.any-default-radios-row').parent().hide();
-      $('input.default-checkboxes').show();
+    function change_default_widget(multiple) {
+      if (multiple) {
+        $('input.default-radios').hide();
+        $('td.any-default-radios-row').parent().hide();
+        $('input.default-checkboxes').show();
+      }
+      else {
+        $('input.default-checkboxes').hide();
+        $('td.any-default-radios-row').parent().show();
+        $('input.default-radios').show();
+      }
     }
-    else {
-      $('input.default-checkboxes').hide();
-      $('td.any-default-radios-row').parent().show();
-      $('input.default-radios').show();
-    }
+    // Update on widget change.
+    $('input[name="options[group_info][multiple]"]').change(function() {
+      change_default_widget($(this).attr("checked"));
+    });
+    // Update the first time the form is rendered.
+    $('input[name="options[group_info][multiple]"]').trigger('change');
   }
-  // Update on widget change.
-  $('input[name="options[group_info][multiple]"]').change(function() {
-    change_default_widget($(this).attr("checked"));
-  });
-  // Update the first time the form is rendered.
-  $('input[name="options[group_info][multiple]"]').trigger('change');
 };
 
 /**
@@ -878,34 +884,34 @@ Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
 /**
  * Change the Apply button text based upon the override select state.
  */
-Drupal.behaviors.viewsUiOverrideSelect = {};
-Drupal.behaviors.viewsUiOverrideSelect.attach = function (context) {
+Drupal.behaviors.viewsUiOverrideSelect = {
+  attach: function (context) {
+    $('#edit-override-dropdown', context).once('views-ui-override-button-text', function() {
+      // Closures! :(
+      var $submit = $('#edit-submit', context);
+      var old_value = $submit.val();
 
-  $('#edit-override-dropdown', context).once('views-ui-override-button-text', function() {
-    // Closures! :(
-    var $submit = $('#edit-submit', context);
-    var old_value = $submit.val();
+      $submit.once('views-ui-override-button-text')
+        .bind('mouseup', function() {
+          $(this).val(old_value);
+          return true;
+        });
 
-    $submit.once('views-ui-override-button-text')
-      .bind('mouseup', function() {
-        $(this).val(old_value);
-        return true;
-      });
-
-    $(this).bind('change', function() {
-      if ($(this).val() === 'default') {
-        $submit.val(Drupal.t('Apply (all displays)'));
-      }
-      else if ($(this).val() === 'default_revert') {
-        $submit.val(Drupal.t('Revert to default'));
-      }
-      else {
-        $submit.val(Drupal.t('Apply (this display)'));
-      }
-    })
-    .trigger('change');
-  });
-
+      $(this).bind('change', function() {
+        var value = $(this).val();
+        if (value === 'default') {
+          $submit.val(Drupal.t('Apply (all displays)'));
+        }
+        else if (value === 'default_revert') {
+          $submit.val(Drupal.t('Revert to default'));
+        }
+        else {
+          $submit.val(Drupal.t('Apply (this display)'));
+        }
+      })
+      .trigger('change');
+    });
+  }
 };
 
 Drupal.viewsUi.resizeModal = function (e, no_shrink) {
@@ -1002,8 +1008,6 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 };
 
 $(function() {
-  // $(window).bind('resize', Drupal.viewsUi.resizeModal);
-  // $(window).bind('scroll', Drupal.viewsUi.resizeModal);
   $(window).on({
     resize: Drupal.viewsUi.resizeModal,
     scroll: Drupal.viewsUi.resizeModal
