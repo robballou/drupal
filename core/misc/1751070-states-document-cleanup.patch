@@ -1,16 +1,7 @@
 diff --git a/core/misc/states.js b/core/misc/states.js
-index afd922c..f508386 100644
+index afd922c..bb84fed 100644
 --- a/core/misc/states.js
 +++ b/core/misc/states.js
-@@ -118,7 +118,7 @@ states.Dependent.prototype = {
-         this.values[selector][state.name] = null;
- 
-         // Monitor state changes of the specified state for this dependee.
--        $(selector).bind('state:' + state, {selector: selector, state: state}, stateEventHandler);
-+        $(document).on('state:' + state, selector, {selector: selector, state: state}, stateEventHandler);
- 
-         // Make sure the event we just bound ourselves to is actually fired.
-         new states.Trigger({ selector: selector, state: state });
 @@ -348,7 +348,7 @@ states.Trigger.prototype = {
      var oldValue = valueFn.call(this.element);
  
@@ -20,52 +11,90 @@ index afd922c..f508386 100644
        var value = valueFn.call(this.element, e);
        // Only trigger the event if the value has actually changed.
        if (oldValue !== value) {
-@@ -497,8 +497,8 @@ states.State.prototype = {
+@@ -497,50 +497,48 @@ states.State.prototype = {
   * bubble up to these handlers. We use this system so that themes and modules
   * can override these state change handlers for particular parts of a page.
   */
 -
 -$(document).bind('state:disabled', function(e) {
-+var $document = $(document);
-+$document.on('state:disabled', function(e) {
-   // Only act when this change was triggered by a dependency and not by the
-   // element monitoring itself.
-   if (e.trigger) {
-@@ -512,30 +512,31 @@ $(document).bind('state:disabled', function(e) {
-   }
- });
- 
+-  // Only act when this change was triggered by a dependency and not by the
+-  // element monitoring itself.
+-  if (e.trigger) {
+-    $(e.target)
+-      .attr('disabled', e.value)
+-        .closest('.form-item, .form-submit, .form-wrapper').toggleClass('form-disabled', e.value)
+-        .find('select, input, textarea').attr('disabled', e.value);
+-
+-    // Note: WebKit nightlies don't reflect that change correctly.
+-    // See https://bugs.webkit.org/show_bug.cgi?id=23789
+-  }
+-});
+-
 -$(document).bind('state:required', function(e) {
-+$document.on('state:required', function(e) {
-   if (e.trigger) {
-+    var $formItems = $(e.target).closest('.form-item, .form-wrapper');
-     if (e.value) {
+-  if (e.trigger) {
+-    if (e.value) {
 -      $(e.target).closest('.form-item, .form-wrapper').find('label').append('<abbr class="form-required" title="' + Drupal.t('This field is required.') + '">*</abbr>');
-+      $formItems.find('label').append('<abbr class="form-required" title="' + Drupal.t('This field is required.') + '">*</abbr>');
++$(document).on({
++
++  'state:disabled': function(e) {
++    // Only act when this change was triggered by a dependency and not by the
++    // element monitoring itself.
++    if (e.trigger) {
++      $(e.target)
++        .attr('disabled', e.value)
++          .closest('.form-item, .form-submit, .form-wrapper').toggleClass('form-disabled', e.value)
++          .find('select, input, textarea').attr('disabled', e.value);
++
++      // Note: WebKit nightlies don't reflect that change correctly.
++      // See https://bugs.webkit.org/show_bug.cgi?id=23789
      }
-     else {
+-    else {
 -      $(e.target).closest('.form-item, .form-wrapper').find('label .form-required').remove();
-+      $formItems.find('label .form-required').remove();
++  },
++  'state:required': function(e) {
++    if (e.trigger) {
++      var $formItems = $(e.target).closest('.form-item, .form-wrapper');
++      if (e.value) {
++        $formItems.find('label').append('<abbr class="form-required" title="' + Drupal.t('This field is required.') + '">*</abbr>');
++      }
++      else {
++        $formItems.find('label .form-required').remove();
++      }
      }
-   }
- });
- 
+-  }
+-});
+-
 -$(document).bind('state:visible', function(e) {
-+$document.on('state:visible', function(e) {
-   if (e.trigger) {
-     $(e.target).closest('.form-item, .form-submit, .form-wrapper').toggle(e.value);
-   }
- });
+-  if (e.trigger) {
+-    $(e.target).closest('.form-item, .form-submit, .form-wrapper').toggle(e.value);
+-  }
+-});
++  },
  
 -$(document).bind('state:checked', function(e) {
-+$document.on('state:checked', function(e) {
-   if (e.trigger) {
-     $(e.target).attr('checked', e.value);
-   }
- });
+-  if (e.trigger) {
+-    $(e.target).attr('checked', e.value);
+-  }
+-});
++  'state:checked': function(e) {
++    if (e.trigger) {
++      $(e.target).attr('checked', e.value);
++    }
++  },
  
 -$(document).bind('state:collapsed', function(e) {
-+$document.on('state:collapsed', function(e) {
-   if (e.trigger) {
-     if ($(e.target).is('.collapsed') !== e.value) {
-       $(e.target).find('> legend a').click();
+-  if (e.trigger) {
+-    if ($(e.target).is('.collapsed') !== e.value) {
+-      $(e.target).find('> legend a').click();
++  'state:collapsed': function(e) {
++    if (e.trigger) {
++      var $target = $(e.target);
++      if ($target.is('.collapsed') !== e.value) {
++        $target.find('> legend a').click();
++      }
+     }
+   }
++
+ });
+ 
+ 
