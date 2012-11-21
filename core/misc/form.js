@@ -63,10 +63,9 @@ Drupal.behaviors.formUpdated = {
  * Prepopulate form fields with information from the visitor cookie.
  */
 Drupal.behaviors.fillUserInfoFromCookie = {
-  attach: function (context, settings) {
+  attach: function () {
     var userInfo = ['name', 'mail', 'homepage'];
     $('form.user-info-from-cookie').once('user-info-from-cookie', function () {
-      var formContext = this;
       var $formContext = $(this);
       var i, il, $element, cookie;
       for (i = 0, il = userInfo.length; i < il; i += 1) {
