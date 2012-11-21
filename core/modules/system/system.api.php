@@ -566,51 +566,6 @@ function hook_menu_get_item_alter(&$router_item, $path, $original_map) {
 }
 
 /**
- * Defines routes in the new router system.
- *
- * A route is a Symfony Route object.  See the Symfony documentation for more
- * details on the available options.  Of specific note:
- *  - _controller: This is the PHP callable that will handle a request matching
- *              the route.
- *  - _content: This is the PHP callable that will handle the body of a request
- *              matching this route.  A default controller will provide the page
- *              rendering around it.
- *
- * Typically you will only specify one or the other of those properties.
- *
- * @deprecated
- *   This mechanism for registering routes is temporary. It will be replaced
- *   by a more robust mechanism in the near future.  It is documented here
- *   only for completeness.
- */
-function hook_route_info() {
-  $collection = new RouteCollection();
-
-  $route = new Route('router_test/test1', array(
-    '_controller' => '\Drupal\router_test\TestControllers::test1'
-  ));
-  $collection->add('router_test_1', $route);
-
-  $route = new Route('router_test/test2', array(
-    '_content' => '\Drupal\router_test\TestControllers::test2'
-  ));
-  $collection->add('router_test_2', $route);
-
-  $route = new Route('router_test/test3/{value}', array(
-    '_content' => '\Drupal\router_test\TestControllers::test3'
-  ));
-  $collection->add('router_test_3', $route);
-
-  $route = new Route('router_test/test4/{value}', array(
-    '_content' => '\Drupal\router_test\TestControllers::test4',
-    'value' => 'narf',
-  ));
-  $collection->add('router_test_4', $route);
-
-  return $collection;
-}
-
-/**
  * Define menu items and page callbacks.
  *
  * This hook enables modules to register paths in order to define how URL
@@ -1934,6 +1889,35 @@ function hook_theme_registry_alter(&$theme_registry) {
       unset($theme_registry['forum_topic_navigation']['preprocess functions'][$key]);
     }
   }
+}
+
+/**
+ * Alter the default, hook-independent variables for all templates.
+ *
+ * Allows modules to provide additional default template variables or manipulate
+ * existing. This hook is invoked from template_preprocess() after basic default
+ * template variables have been set up and before the next template preprocess
+ * function is invoked.
+ *
+ * Note that the default template variables are statically cached within a
+ * request. When adding a template variable that depends on other context, it is
+ * your responsibility to appropriately reset the static cache in
+ * template_preprocess() when needed:
+ * @code
+ * drupal_static_reset('template_preprocess');
+ * @endcode
+ *
+ * See user_template_preprocess_default_variables_alter() for an example.
+ *
+ * @param array $variables
+ *   An associative array of default template variables, as set up by
+ *   _template_preprocess_default_variables(). Passed by reference.
+ *
+ * @see template_preprocess()
+ * @see _template_preprocess_default_variables()
+ */
+function hook_template_preprocess_default_variables_alter(&$variables) {
+  $variables['is_admin'] = user_access('access administration pages');
 }
 
 /**

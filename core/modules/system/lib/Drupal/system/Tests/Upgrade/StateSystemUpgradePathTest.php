@@ -43,9 +43,21 @@ class StateSystemUpgradePathTest extends UpgradePathTestBase {
       'value' => 1304208001,
       'variable_name' => 'node_cron_last',
     );
+    $expected_state['statistics.day_timestamp'] = array(
+      'value' => 1352070595,
+      'variable_name' => 'statistics_day_timestamp',
+    );
+    $expected_state['statistics.node_counter_scale'] = array(
+      'value' => 1.0 / 2000,
+      'variable_name' => 'node_cron_views_scale',
+    );
     $expected_state['system.cron_last'] = array(
       'value' => 1304208002,
       'variable_name' => 'cron_last',
+    );
+    $expected_state['system.cron_key'] = array(
+      'value' => 'kdm95qppDDlyZrcUOx453YwQqDA4DNmxi4VQcxzFU9M',
+      'variable_name' => 'cron_key',
     );
     $expected_state['update.last_check'] = array(
       'value' => 1304208000,
@@ -54,6 +66,10 @@ class StateSystemUpgradePathTest extends UpgradePathTestBase {
     $expected_state['update.last_email_notification'] = array(
       'value' => 1304208000,
       'variable_name' => 'update_last_email_notification',
+    );
+    $expected_state['comment.node_comment_statistics_scale'] = array(
+      'value' => 1.0 / 1000,
+      'variable_name' => 'node_cron_comments_scale',
     );
 
     foreach ($expected_state as $name => $data) {

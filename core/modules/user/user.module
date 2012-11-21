@@ -812,14 +812,15 @@ function user_block_view($delta = '') {
       }
       return $block;
 
+    // @todo: Move this block to statistics.module and remove dependency on
+    //   user.access.
     case 'online':
       if (user_access('access content')) {
         // Count users active within the defined period.
         $interval = REQUEST_TIME - $block_config->get('seconds_online');
 
-        // Perform database queries to gather online user lists. We use s.timestamp
-        // rather than u.access because it is much faster.
-        $authenticated_count = db_query("SELECT COUNT(DISTINCT s.uid) FROM {sessions} s WHERE s.timestamp >= :timestamp AND s.uid > 0", array(':timestamp' => $interval))->fetchField();
+        // Perform database queries to gather online user lists.
+        $authenticated_count = db_query("SELECT COUNT(uid) FROM {users} WHERE access >= :timestamp", array(':timestamp' => $interval))->fetchField();
 
         $block['subject'] = t('Who\'s online');
         $block['content'] = array(
@@ -831,9 +832,8 @@ function user_block_view($delta = '') {
         // Display a list of currently online users.
         $max_users = $block_config->get('max_list_count');
         if ($authenticated_count && $max_users) {
-          $items = db_query_range('SELECT u.uid, u.name, MAX(s.timestamp) AS max_timestamp FROM {users} u INNER JOIN {sessions} s ON u.uid = s.uid WHERE s.timestamp >= :interval AND s.uid > 0 GROUP BY u.uid, u.name ORDER BY max_timestamp DESC', 0, $max_users, array(':interval' => $interval))->fetchAll();
-
-          foreach ($items as $account) {
+          $uids = db_query_range('SELECT uid FROM {users} WHERE access >= :interval AND uid > 0 ORDER BY access DESC', 0, $max_users, array(':interval' => $interval))->fetchCol();
+          foreach (user_load_multiple($uids) as $account) {
             $block['content']['#items'][] = theme('username', array('account' => $account));
           }
         }
@@ -883,6 +883,23 @@ function user_format_name($account) {
   $name = !empty($account->name) ? $account->name : config('user.settings')->get('anonymous');
   drupal_alter('user_format_name', $name, $account);
   return $name;
+}
+
+/**
+ * Implements hook_template_preprocess_default_variables_alter().
+ *
+ * @see user_user_login()
+ * @see user_user_logout()
+ */
+function user_template_preprocess_default_variables_alter(&$variables) {
+  global $user;
+
+  $variables['user'] = clone $user;
+  // Remove password and session IDs, since themes should not need nor see them.
+  unset($variables['user']->pass, $variables['user']->sid, $variables['user']->ssid);
+
+  $variables['is_admin'] = user_access('access administration pages');
+  $variables['logged_in'] = ($user->uid > 0);
 }
 
 /**
@@ -1742,6 +1759,24 @@ function user_login_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'user/' . $user->uid;
 
   user_login_finalize($form_state);
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function user_user_login($edit, $account) {
+  // Reset static cache of default variables in template_preprocess() to reflect
+  // the new user.
+  drupal_static_reset('template_preprocess');
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function user_user_logout($account) {
+  // Reset static cache of default variables in template_preprocess() to reflect
+  // the new user.
+  drupal_static_reset('template_preprocess');
 }
 
 /**

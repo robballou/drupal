@@ -1,3 +1,8 @@
+/**
+ * @file
+ * Javascript for the node content editing form.
+ */
+
 (function ($) {
 
 "use strict";
@@ -24,7 +29,7 @@ Drupal.behaviors.contentTypes = {
     $('fieldset#edit-language', context).drupalSetSummary(function(context) {
       var vals = [];
 
-      vals.push($(".form-item-language-configuration-langcode select option:selected", context).text())
+      vals.push($(".form-item-language-configuration-langcode select option:selected", context).text());
 
       $('input:checked', context).next('label').each(function() {
         vals.push(Drupal.checkPlain($(this).text()));

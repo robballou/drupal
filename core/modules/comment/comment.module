@@ -98,9 +98,9 @@ function comment_help($path, $arg) {
 }
 
 /**
- * Implements hook_entity_info_alter().
+ * Implements hook_entity_info().
  */
-function comment_entity_info_alter(&$info) {
+function comment_entity_info(&$info) {
   foreach (node_type_get_names() as $type => $name) {
     $info['comment']['bundles']['comment_node_' . $type] = array(
       'label' => t('@node_type comment', array('@node_type' => $name)),
@@ -1057,7 +1057,7 @@ function comment_form_node_type_form_alter(&$form, $form_state) {
         'class' => array('comment-node-type-settings-form'),
       ),
       '#attached' => array(
-        'library' => array('comment', 'drupal.comment'),
+        'library' => array(array('comment', 'drupal.comment')),
       ),
     );
     // Unlike coment_form_node_form_alter(), all of these settings are applied
@@ -1164,7 +1164,7 @@ function comment_form_node_form_alter(&$form, $form_state) {
       'class' => array('comment-node-settings-form'),
     ),
     '#attached' => array(
-      'library' => array('comment', 'drupal.comment'),
+      'library' => array(array('comment', 'drupal.comment')),
     ),
     '#weight' => 30,
   );
@@ -1318,7 +1318,7 @@ function comment_node_update_index(Node $node, $langcode) {
  */
 function comment_update_index() {
   // Store the maximum possible comments per thread (used for ranking by reply count)
-  variable_set('node_cron_comments_scale', 1.0 / max(1, db_query('SELECT MAX(comment_count) FROM {node_comment_statistics}')->fetchField()));
+  state()->set('comment.node_comment_statistics_scale', 1.0 / max(1, db_query('SELECT MAX(comment_count) FROM {node_comment_statistics}')->fetchField()));
 }
 
 /**
@@ -1477,12 +1477,12 @@ function comment_load($cid, $reset = FALSE) {
 function comment_num_new($nid, $timestamp = 0) {
   global $user;
 
-  if ($user->uid) {
+  if ($user->uid && module_exists('history')) {
     // Retrieve the timestamp at which the current user last viewed this node.
     if (!$timestamp) {
-      $timestamp = node_last_viewed($nid);
+      $timestamp = history_read($nid);
     }
-    $timestamp = ($timestamp > NODE_NEW_LIMIT ? $timestamp : NODE_NEW_LIMIT);
+    $timestamp = ($timestamp > HISTORY_READ_LIMIT ? $timestamp : HISTORY_READ_LIMIT);
 
     // Use the timestamp to retrieve the number of new comments.
     return db_query('SELECT COUNT(cid) FROM {comment} WHERE nid = :nid AND created > :timestamp AND status = :status', array(
@@ -2004,7 +2004,7 @@ function comment_ranking() {
       ),
       // Inverse law that maps the highest reply count on the site to 1 and 0 to 0.
       'score' => '2.0 - 2.0 / (1.0 + node_comment_statistics.comment_count * CAST(:scale AS DECIMAL))',
-      'arguments' => array(':scale' => variable_get('node_cron_comments_scale', 0)),
+      'arguments' => array(':scale' => state()->get('comment.node_comment_statistics_scale') ?: 0),
     ),
   );
 }

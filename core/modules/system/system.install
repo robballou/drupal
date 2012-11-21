@@ -294,7 +294,7 @@ function system_requirements($phase) {
     }
 
     $description .= ' ' . $t('You can <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
-    $description .= '<br />' . $t('To run cron from outside the site, go to <a href="!cron">!cron</a>', array('!cron' => url('cron/' . $cron_config->get('key'))));
+    $description .= '<br />' . $t('To run cron from outside the site, go to <a href="!cron">!cron</a>', array('!cron' => url('cron/' . state()->get('system.cron_key'))));
 
     $requirements['cron'] = array(
       'title' => $t('Cron maintenance tasks'),
@@ -512,11 +512,9 @@ function system_install() {
   variable_set('theme_default', 'stark');
   config_install_default_config('theme', 'stark');
 
-  // Populate the cron key variable.
+  // Populate the cron key state variable.
   $cron_key = drupal_hash_base64(drupal_random_bytes(55));
-  config('system.cron')
-    ->set('key', $cron_key)
-    ->save();
+  state()->set('system.cron_key', $cron_key);
 }
 
 /**
@@ -1756,7 +1754,6 @@ function system_update_8008() {
  */
 function system_update_8009() {
   update_variables_to_config('system.cron', array(
-    'cron_key' => 'key',
     'cron_safe_threshold' => 'threshold.autorun',
     'cron_threshold_warning' => 'threshold.requirements_warning',
     'cron_threshold_error' => 'threshold.requirements_error',
@@ -1937,14 +1934,11 @@ function system_update_8020() {
       ->execute();
     // Rename {blocked_ips} table into {ban_ip}.
     db_rename_table('blocked_ips', 'ban_ip');
-    // Rename all references to the action callback.
-    db_update('actions')
-      ->fields(array('callback' => 'ban_ip_action'))
+    // Remove all references to the removed action callback.
+    db_delete('actions')
       ->condition('callback', 'system_block_ip_action')
       ->execute();
-    // Rename the action's aid.
-    db_update('actions')
-      ->fields(array('aid' => 'ban_ip_action'))
+    db_delete('actions')
       ->condition('aid', 'system_block_ip_action')
       ->execute();
     // Enable the new Ban module.
@@ -2200,12 +2194,30 @@ function system_update_8033() {
 }
 
 /**
- * Moves cron last run time from variable to state.
+ * Moves cron last run time and cron key from variable to state.
  *
  * @ingroup config_upgrade
  */
 function system_update_8034() {
-  update_variables_to_state(array('cron_last' => 'system.cron_last'));
+  update_variables_to_state(array(
+    'cron_last' => 'system.cron_last',
+    'cron_key' => 'system.cron_key',
+    ));
+}
+
+/**
+ * Moves filter_allowed_protocols variable to config.
+ *
+ * This config is provided now by the system module because it is used by
+ * drupal_strip_dangerous_protocols() and must to be available before the filter
+ * module be installed.
+ *
+ * @ingroup config_upgrade
+ */
+function system_update_8035() {
+  update_variables_to_config('system.filter', array(
+    'filter_allowed_protocols' => 'protocols',
+  ));
 }
 
 /**

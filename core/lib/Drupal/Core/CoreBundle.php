@@ -72,7 +72,9 @@ class CoreBundle extends Bundle
       ->addArgument(new Reference('database'));
     $container->register('router.builder', 'Drupal\Core\Routing\RouteBuilder')
       ->addArgument(new Reference('router.dumper'))
-      ->addArgument(new Reference('lock'));
+      ->addArgument(new Reference('lock'))
+      ->addArgument(new Reference('dispatcher'));
+
 
     $container->register('matcher', 'Drupal\Core\Routing\ChainMatcher');
     $container->register('legacy_url_matcher', 'Drupal\Core\LegacyUrlMatcher')
@@ -126,6 +128,8 @@ class CoreBundle extends Bundle
       ->addArgument(new Reference('service_container'))
       ->setFactoryClass('Drupal\Core\ExceptionController')
       ->setFactoryMethod('getExceptionListener');
+
+    $container->register('transliteration', 'Drupal\Component\Transliteration\PHPTransliteration');
 
     // Add Serializer with arguments to be replaced in the compiler pass.
     $container->register('serializer', 'Symfony\Component\Serializer\Serializer')

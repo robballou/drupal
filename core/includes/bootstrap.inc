@@ -2,10 +2,10 @@
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Database\Database;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Symfony\Component\ClassLoader\UniversalClassLoader;
 use Symfony\Component\ClassLoader\ApcUniversalClassLoader;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Exception\RuntimeException as DependencyInjectionRuntimeException;
 use Symfony\Component\HttpFoundation\Request;
@@ -738,7 +738,6 @@ function drupal_settings_initialize() {
   if (isset($base_url)) {
     // Parse fixed base URL from settings.php.
     $parts = parse_url($base_url);
-    $http_protocol = $parts['scheme'];
     if (!isset($parts['path'])) {
       $parts['path'] = '';
     }
@@ -1996,6 +1995,19 @@ function drupal_hash_base64($data) {
 }
 
 /**
+ * Gets a salt useful for hardening against SQL injection.
+ *
+ * @return
+ *   A salt based on information in settings.php, not in the database.
+ */
+function drupal_get_hash_salt() {
+  global $drupal_hash_salt;
+  // If the $drupal_hash_salt variable is empty, a hash of the serialized
+  // database credentials is used as a fallback salt.
+  return empty($drupal_hash_salt) ? hash('sha256', serialize(Database::getConnectionInfo('default'))) : $drupal_hash_salt;
+}
+
+/**
  * Merges multiple arrays, recursively, and returns the merged array.
  *
  * This function is similar to PHP's array_merge_recursive() function, but it
@@ -2402,7 +2414,7 @@ function drupal_get_bootstrap_phase() {
  * On a normal page request the container is built by the kernel and passed in
  * to this function which stores it statically. Any full bootstrap outside of
  * the context of a page request will require a container with a minimal set of
- * services. If this function is called without the $reset parameter, and no
+ * services. If this function is called without the $rebuild parameter, and no
  * container object has been statically cached, it builds this minimal container,
  * registering the services that are required.
  *
@@ -2525,7 +2537,6 @@ function typed_data() {
  *   HMAC and timestamp.
  */
 function drupal_valid_test_ua($new_prefix = NULL) {
-  global $drupal_hash_salt;
   static $test_prefix;
 
   if (isset($new_prefix)) {
@@ -2541,7 +2552,7 @@ function drupal_valid_test_ua($new_prefix = NULL) {
     // We use the salt from settings.php to make the HMAC key, since
     // the database is not yet initialized and we can't access any Drupal variables.
     // The file properties add more entropy not easily accessible to others.
-    $key = $drupal_hash_salt . filectime(__FILE__) . fileinode(__FILE__);
+    $key = drupal_get_hash_salt() . filectime(__FILE__) . fileinode(__FILE__);
     $time_diff = REQUEST_TIME - $time;
     // Since we are making a local request a 5 second time window is allowed,
     // and the HMAC must match.
@@ -2559,14 +2570,13 @@ function drupal_valid_test_ua($new_prefix = NULL) {
  * Generates a user agent string with a HMAC and timestamp for simpletest.
  */
 function drupal_generate_test_ua($prefix) {
-  global $drupal_hash_salt;
   static $key;
 
   if (!isset($key)) {
     // We use the salt from settings.php to make the HMAC key, since
     // the database is not yet initialized and we can't access any Drupal variables.
     // The file properties add more entropy not easily accessible to others.
-    $key = $drupal_hash_salt . filectime(__FILE__) . fileinode(__FILE__);
+    $key = drupal_get_hash_salt() . filectime(__FILE__) . fileinode(__FILE__);
   }
   // Generate a moderately secure HMAC based on the database credentials.
   $salt = uniqid('', TRUE);
@@ -3102,7 +3112,7 @@ function drupal_classloader() {
       case 'apc':
         if (function_exists('apc_store')) {
           require_once DRUPAL_ROOT . '/core/vendor/symfony/class-loader/Symfony/Component/ClassLoader/ApcUniversalClassLoader.php';
-          $loader = new ApcUniversalClassLoader('drupal.' . $GLOBALS['drupal_hash_salt']);
+          $loader = new ApcUniversalClassLoader('drupal.' . drupal_get_hash_salt());
           break;
         }
       // Fall through to the default loader if APC was not loaded, so that the
@@ -3393,12 +3403,14 @@ function _drupal_shutdown_function() {
     }
   }
   catch (Exception $exception) {
-    // If we are displaying errors, then do so with no possibility of a further uncaught exception being thrown.
-   require_once DRUPAL_ROOT . '/core/includes/errors.inc';
-   if (error_displayable()) {
+    // If we are displaying errors, then do so with no possibility of a further
+    // uncaught exception being thrown.
+    require_once DRUPAL_ROOT . '/core/includes/errors.inc';
+    if (error_displayable()) {
       print '<h1>Uncaught exception thrown in shutdown function.</h1>';
       print '<p>' . _drupal_render_exception_safe($exception) . '</p><hr />';
     }
+    error_log($exception);
   }
 }
 
@@ -3465,7 +3477,7 @@ function drupal_php_storage($name = 'default') {
     else {
       $configuration = array(
         'class' => 'Drupal\Component\PhpStorage\MTimeProtectedFileStorage',
-        'secret' => $GLOBALS['drupal_hash_salt'],
+        'secret' => drupal_get_hash_salt(),
       );
     }
     $class = isset($configuration['class']) ? $configuration['class'] : 'Drupal\Component\PhpStorage\MTimeProtectedFileStorage';
