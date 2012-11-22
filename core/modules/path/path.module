@@ -327,6 +327,7 @@ function path_library_info() {
       array('system', 'jquery'),
       array('system', 'drupal'),
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
 

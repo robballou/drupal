@@ -3778,6 +3778,7 @@ function node_library_info() {
       array('system', 'drupal'),
       array('system', 'drupalSettings'),
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
   $libraries['drupal.node.preview'] = array(
@@ -3801,6 +3802,7 @@ function node_library_info() {
       array('system', 'jquery'),
       array('system', 'drupal'),
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
 

@@ -1213,6 +1213,18 @@ function system_library_info() {
     ),
   );
 
+  // Drupal's summary jQuery plugin
+  $libraries['drupal.summary'] = array(
+    'title' => 'Drupal summary jQuery plugin',
+    'version' => VERSION,
+    'js' => array(
+      'core/misc/drupal.summary.js' => array('group', JS_LIBRARY, 'weight' => 1),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
   // Drupal's states library.
   $libraries['drupal.states'] = array(
     'title' => 'Drupal states',
@@ -1271,6 +1283,7 @@ function system_library_info() {
       array('system', 'drupalSettings'),
       // collapse.js relies on drupalGetSummary in form.js
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
 
@@ -1375,6 +1388,7 @@ function system_library_info() {
       array('system', 'drupalSettings'),
       // Vertical tabs relies on drupalGetSummary in form.js
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
 

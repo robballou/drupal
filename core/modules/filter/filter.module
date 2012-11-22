@@ -1953,6 +1953,7 @@ function filter_library_info() {
       array('system', 'drupal'),
       array('system', 'jquery.once'),
       array('system', 'drupal.form'),
+      array('system', 'drupal.summary'),
     ),
   );
   $libraries['drupal.filter'] = array(
