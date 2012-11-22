@@ -31,8 +31,8 @@ $.fn.drupalSetSummary = function (callback) {
     .data('summaryCallback', callback)
     // To prevent duplicate events, the handlers are first removed and then
     // (re-)added.
-    .unbind('formUpdated.summary')
-    .bind('formUpdated.summary', function () {
+    .off('formUpdated.summary')
+    .on('formUpdated.summary', function () {
       self.trigger('summaryUpdated');
     })
     // The actual summaryUpdated handler doesn't fire when the callback is
