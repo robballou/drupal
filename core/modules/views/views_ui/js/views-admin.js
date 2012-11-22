@@ -121,9 +121,9 @@ Drupal.viewsUi.FormFieldFiller.prototype.bind = function () {
 
   this.unbind();
   // Populate the form field when the source changes.
-  this.source.bind('keyup.viewsUi change.viewsUi', this.populate);
+  this.source.on('keyup.viewsUi change.viewsUi', this.populate);
   // Quit populating the field as soon as it gets focus.
-  this.target.bind('focus.viewsUi', this.unbind);
+  this.target.on('focus.viewsUi', this.unbind);
 };
 
 /**
@@ -256,7 +256,7 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
     $addDisplayDropdown.appendTo($menu);
 
     // Add the click handler for the add display button
-    $('li.add > a', $menu).bind('click', function (event) {
+    $('li.add > a', $menu).on('click', function (event) {
       event.preventDefault();
       var $trigger = $(this);
       Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
