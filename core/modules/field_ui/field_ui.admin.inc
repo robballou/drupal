@@ -41,7 +41,7 @@ function field_ui_fields_list() {
         }
 
         // Add the current instance.
-        $admin_path = _field_ui_bundle_admin_path($entity_type, $bundle);
+        $admin_path = field_ui_bundle_admin_path($entity_type, $bundle);
         $rows[$field_name]['data'][2][] = $admin_path ? l($bundles[$entity_type][$bundle]['label'], $admin_path . '/fields') : $bundles[$entity_type][$bundle]['label'];
       }
     }
@@ -305,8 +305,8 @@ function theme_field_ui_table($variables) {
  *   The processed form for the given entity type and bundle.
  *
  * @see field_ui_menu()
- * @see field_ui_field_overview_form_validate()
- * @see field_ui_field_overview_form_submit()
+ * @see Drupal\field_ui\FieldOverview::validate()
+ * @see Drupal\field_ui\FieldOverview::submit()
  * @ingroup forms
  */
 function field_ui_field_overview($entity_type, $bundle) {
@@ -455,6 +455,12 @@ function field_ui_widget_type_options($field_type = NULL, $by_label = FALSE) {
     $widget_types = field_info_widget_types();
     uasort($widget_types, 'drupal_sort_weight');
     foreach ($widget_types as $name => $widget_type) {
+      if (!isset($widget_type['field_types'])) {
+        // @todo: TestFieldWidgetMultiple widget is found but the info alter
+        //   hook isn't. Looks like another namespace problem. Ignore this entry
+        //   to allow the tests to pass. See http://drupal.org/node/1836008.
+        continue;
+      }
       foreach ($widget_type['field_types'] as $widget_field_type) {
         // Check that the field type exists.
         if (isset($field_types[$widget_field_type])) {
@@ -523,7 +529,7 @@ function field_ui_existing_field_options($entity_type, $bundle) {
           // - locked fields,
           // - fields already in the current bundle,
           // - fields that cannot be added to the entity type,
-          // - fields that that shoud not be added via user interface.
+          // - fields that that should not be added via user interface.
 
           if (empty($field['locked'])
             && !field_info_instance($entity_type, $field['field_name'], $bundle)
@@ -533,7 +539,7 @@ function field_ui_existing_field_options($entity_type, $bundle) {
               'type' => $field['type'],
               'type_label' => $field_types[$field['type']]['label'],
               'field' => $field['field_name'],
-              'label' => t($instance['label']),
+              'label' => $instance['label'],
               'widget_type' => $instance['widget']['type'],
             );
           }
@@ -719,7 +725,7 @@ function field_ui_field_delete_form($form, &$form_state, $instance) {
   $entity_type = $instance['entity_type'];
   $field = field_info_field($instance['field_name']);
 
-  $admin_path = _field_ui_bundle_admin_path($entity_type, $bundle);
+  $admin_path = field_ui_bundle_admin_path($entity_type, $bundle);
 
   $form['entity_type'] = array('#type' => 'value', '#value' => $entity_type);
   $form['bundle'] = array('#type' => 'value', '#value' => $bundle);
@@ -766,7 +772,7 @@ function field_ui_field_delete_form_submit($form, &$form_state) {
     drupal_set_message(t('There was a problem removing the %field from the %type content type.', array('%field' => $instance['label'], '%type' => $bundle_label)), 'error');
   }
 
-  $admin_path = _field_ui_bundle_admin_path($entity_type, $bundle);
+  $admin_path = field_ui_bundle_admin_path($entity_type, $bundle);
   $form_state['redirect'] = field_ui_get_destinations(array($admin_path . '/fields'));
 
   // Fields are purged on cron. However field module prevents disabling modules
@@ -1132,6 +1138,6 @@ function field_ui_next_destination($entity_type, $bundle) {
     unset($_REQUEST['destinations']);
     return field_ui_get_destinations($destinations);
   }
-  $admin_path = _field_ui_bundle_admin_path($entity_type, $bundle);
+  $admin_path = field_ui_bundle_admin_path($entity_type, $bundle);
   return $admin_path . '/fields';
 }

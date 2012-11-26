@@ -200,7 +200,8 @@ function update_results_page() {
     $output = '<p>Updates were attempted. If you see no failures below, you may proceed happily back to your <a href="' . base_path() . '">site</a>. Otherwise, you may need to update your database manually.' . $log_message . '</p>';
   }
   else {
-    list($module, $version) = array_pop(reset($_SESSION['updates_remaining']));
+    $last = reset($_SESSION['updates_remaining']);
+    list($module, $version) = array_pop($last);
     $output = '<p class="error">The update process was aborted prematurely while running <strong>update #' . $version . ' in ' . $module . '.module</strong>.' . $log_message;
     if (module_exists('dblog')) {
       $output .= ' You may need to check the <code>watchdog</code> database table manually.';
@@ -459,7 +460,8 @@ $container->register('router.dumper', '\Drupal\Core\Routing\MatcherDumper')
   ->addArgument(new Reference('database'));
 $container->register('router.builder', 'Drupal\Core\Routing\RouteBuilder')
   ->addArgument(new Reference('router.dumper'))
-  ->addArgument(new Reference('lock'));
+  ->addArgument(new Reference('lock'))
+  ->addArgument(new Reference('dispatcher'));
 
 // Turn error reporting back on. From now on, only fatal errors (which are
 // not passed through the error handler) will cause a message to be printed.

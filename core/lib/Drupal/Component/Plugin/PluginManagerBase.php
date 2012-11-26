@@ -8,11 +8,12 @@
 namespace Drupal\Component\Plugin;
 
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Component\Plugin\Discovery\CachedDiscoveryInterface;
 
 /**
  * Base class for plugin managers.
  */
-abstract class PluginManagerBase implements PluginManagerInterface {
+abstract class PluginManagerBase implements PluginManagerInterface, CachedDiscoveryInterface {
 
   /**
    * The object that discovers plugins managed by this manager.
@@ -48,23 +49,23 @@ abstract class PluginManagerBase implements PluginManagerInterface {
    * Implements Drupal\Component\Plugin\PluginManagerInterface::getDefinition().
    */
   public function getDefinition($plugin_id) {
-    $definition = $this->discovery->getDefinition($plugin_id);
-    if (isset($definition)) {
-      $this->processDefinition($definition, $plugin_id);
-    }
-    return $definition;
+    return $this->discovery->getDefinition($plugin_id);;
   }
 
   /**
    * Implements Drupal\Component\Plugin\PluginManagerInterface::getDefinitions().
    */
   public function getDefinitions() {
-    $definitions = $this->discovery->getDefinitions();
-    foreach ($definitions as $plugin_id => &$definition) {
-      $this->processDefinition($definition, $plugin_id);
-    }
+    return $this->discovery->getDefinitions();
+  }
 
-    return $definitions;
+  /**
+   * Implements \Drupal\Component\Plugin\Discovery\CachedDiscoveryInterface::clearCachedDefinitions().
+   */
+  public function clearCachedDefinitions() {
+    if ($this->discovery instanceof CachedDiscoveryInterface) {
+      $this->discovery->clearCachedDefinitions();
+    }
   }
 
   /**
@@ -88,7 +89,7 @@ abstract class PluginManagerBase implements PluginManagerInterface {
    * additional processing logic they can do that by replacing or extending the
    * method.
    */
-  protected function processDefinition(&$definition, $plugin_id) {
+  public function processDefinition(&$definition, $plugin_id) {
     $definition = NestedArray::mergeDeep($this->defaults, $definition);
   }
 

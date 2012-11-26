@@ -99,18 +99,14 @@ class RegisterFormController extends AccountFormController {
     $admin = $form_state['values']['administer_users'];
     $notify = !empty($form_state['values']['notify']);
 
+    // Save has no return value so this cannot be tested.
+    // Assume save has gone through correctly.
     $account->save();
 
-    // Terminate if an error occurred while saving the account.
-    if ($status =! SAVED_NEW) {
-      drupal_set_message(t("Error saving user account."), 'error');
-      $form_state['redirect'] = '';
-      return;
-    }
     $form_state['user'] = $account;
     $form_state['values']['uid'] = $account->uid;
 
-    watchdog('user', 'New user: %name (%email).', array('%name' => $form_state['values']['name'], '%email' => $form_state['values']['mail']), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
+    watchdog('user', 'New user: %name %email.', array('%name' => $form_state['values']['name'], '%email' => '<' . $form_state['values']['mail'] . '>'), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
 
     // Add plain text password into user account to generate mail tokens.
     $account->password = $pass;

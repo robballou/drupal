@@ -300,7 +300,7 @@ function system_element_info() {
   $types['submit'] = array(
     '#input' => TRUE,
     '#name' => 'op',
-    '#button_type' => 'submit',
+    '#is_button' => TRUE,
     '#executes_submit_callback' => TRUE,
     '#limit_validation_errors' => FALSE,
     '#process' => array('form_process_button', 'ajax_process_form'),
@@ -309,7 +309,7 @@ function system_element_info() {
   $types['button'] = array(
     '#input' => TRUE,
     '#name' => 'op',
-    '#button_type' => 'submit',
+    '#is_button' => TRUE,
     '#executes_submit_callback' => FALSE,
     '#limit_validation_errors' => FALSE,
     '#process' => array('form_process_button', 'ajax_process_form'),
@@ -317,7 +317,7 @@ function system_element_info() {
   );
   $types['image_button'] = array(
     '#input' => TRUE,
-    '#button_type' => 'submit',
+    '#is_button' => TRUE,
     '#executes_submit_callback' => TRUE,
     '#limit_validation_errors' => FALSE,
     '#process' => array('form_process_button', 'ajax_process_form'),
@@ -504,7 +504,6 @@ function system_element_info() {
   // Form structure.
   $types['item'] = array(
     '#markup' => '',
-    '#pre_render' => array('drupal_pre_render_markup'),
     '#theme_wrappers' => array('form_element'),
   );
   $types['hidden'] = array(
@@ -517,10 +516,9 @@ function system_element_info() {
   );
   $types['markup'] = array(
     '#markup' => '',
-    '#pre_render' => array('drupal_pre_render_markup'),
   );
   $types['link'] = array(
-    '#pre_render' => array('drupal_pre_render_link', 'drupal_pre_render_markup'),
+    '#pre_render' => array('drupal_pre_render_link'),
   );
   $types['fieldset'] = array(
     '#collapsible' => FALSE,
@@ -566,13 +564,6 @@ function system_element_info() {
  * Implements hook_menu().
  */
 function system_menu() {
-  $items['cron/%'] = array(
-    'title' => 'Run cron',
-    'page callback' => 'system_cron_page',
-    'access callback' => 'system_cron_access',
-    'access arguments' => array(1),
-    'type' => MENU_CALLBACK,
-  );
   $items['system/files'] = array(
     'title' => 'File download',
     'page callback' => 'file_download',
@@ -1079,41 +1070,6 @@ function system_menu() {
 }
 
 /**
- * Page callback; Execute cron tasks.
- *
- * @see system_cron_access().
- */
-
-function system_cron_page() {
-  drupal_page_is_cacheable(FALSE);
-  drupal_cron_run();
-
-  // HTTP 204 is "No content", meaning "I did what you asked and we're done."
-  return new Response('', 204);
-}
-
-/**
- * Access callback for system_cron().
- *
- * @param string $key
- *   A hash to validate the page request origin.
- *
- * @see system_cron_page().
- */
-function system_cron_access($key) {
-  if ($key != config('system.cron')->get('key')) {
-    watchdog('cron', 'Cron could not run because an invalid key was used.', array(), WATCHDOG_NOTICE);
-    return FALSE;
-  }
-  elseif (config('system.maintenance')->get('enabled')) {
-    watchdog('cron', 'Cron could not run because the site is in maintenance mode.', array(), WATCHDOG_NOTICE);
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-/**
  * Theme callback for the default batch page.
  */
 function _system_batch_theme() {
@@ -1287,6 +1243,19 @@ function system_library_info() {
       array('system', 'jquery'),
       array('system', 'drupal'),
       array('system', 'drupal.ajax'),
+    ),
+  );
+
+  // A utility function to limit calls to a function with a given time.
+  $libraries['drupal.debounce'] = array(
+    'title' => 'Drupal debounce',
+    'version' => VERSION,
+    'js' => array(
+      'core/misc/debounce.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      // @todo remove drupal dependency.
+      array('system', 'drupal'),
     ),
   );
 
@@ -1905,7 +1874,6 @@ function system_library_info() {
       array('system', 'jquery'),
     ),
   );
-
   $libraries['drupal.tableselect'] = array(
     'title' => 'Tableselect',
     'version' => VERSION,
@@ -1978,6 +1946,18 @@ function system_library_info() {
       array('system', 'jquery'),
       array('system', 'drupal'),
       array('system', 'drupalSettings'),
+      array('system', 'jquery.once'),
+    ),
+  );
+  $libraries['drupal.system.modules'] = array(
+    'title' => 'System cron',
+    'version' => VERSION,
+    'js' => array(
+      drupal_get_path('module', 'system') . '/system.modules.js' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'drupal'),
       array('system', 'jquery.once'),
     ),
   );
@@ -3399,7 +3379,7 @@ function confirm_form($form, $question, $path, $description = NULL, $yes = NULL,
 function system_admin_compact_mode() {
   // PHP converts dots into underscores in cookie names to avoid problems with
   // its parser, so we use a converted cookie name.
-  return isset($_COOKIE['Drupal_visitor_admin_compact_mode']) ? $_COOKIE['Drupal_visitor_admin_compact_mode'] : variable_get('admin_compact_mode', FALSE);
+  return isset($_COOKIE['Drupal_visitor_admin_compact_mode']) ? $_COOKIE['Drupal_visitor_admin_compact_mode'] : config('system.site')->get('admin_compact_mode');
 }
 
 /**
@@ -3506,9 +3486,7 @@ function system_get_module_admin_tasks($module, $info) {
  */
 function system_cron() {
   // Cleanup the flood.
-  db_delete('flood')
-    ->condition('expiration', REQUEST_TIME, '<')
-    ->execute();
+  drupal_container()->get('flood')->garbageCollection();
 
   $cache_bins = array_merge(module_invoke_all('cache_flush'), array('form', 'menu'));
   foreach ($cache_bins as $bin) {
@@ -4208,7 +4186,7 @@ function theme_exposed_filters($variables) {
   if (isset($form['current'])) {
     $items = array();
     foreach (element_children($form['current']) as $key) {
-      $items[] = drupal_render($form['current'][$key]);
+      $items[] = $form['current'][$key];
     }
     $output .= theme('item_list', array('items' => $items, 'attributes' => array('class' => array('clearfix', 'current-filters'))));
   }

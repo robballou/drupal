@@ -1,3 +1,8 @@
+/**
+ * @file
+ * Defines Javascript behaviors for the node module.
+ */
+
 (function ($) {
 
 "use strict";
@@ -44,6 +49,7 @@ Drupal.behaviors.nodeFieldsetSummaries = {
     });
 
     $context.find('fieldset.node-translation-options').drupalSetSummary(function (context) {
+      var $context = $(context);
       var translate;
       var $checkbox = $context.find('.form-item-translation-translate input');
 

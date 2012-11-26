@@ -2,10 +2,10 @@
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Database\Database;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Symfony\Component\ClassLoader\UniversalClassLoader;
 use Symfony\Component\ClassLoader\ApcUniversalClassLoader;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Exception\RuntimeException as DependencyInjectionRuntimeException;
 use Symfony\Component\HttpFoundation\Request;
@@ -738,7 +738,6 @@ function drupal_settings_initialize() {
   if (isset($base_url)) {
     // Parse fixed base URL from settings.php.
     $parts = parse_url($base_url);
-    $http_protocol = $parts['scheme'];
     if (!isset($parts['path'])) {
       $parts['path'] = '';
     }
@@ -1996,6 +1995,17 @@ function drupal_hash_base64($data) {
 }
 
 /**
+ * Gets a salt useful for hardening against SQL injection.
+ *
+ * @return string
+ *   A salt based on information in settings.php, not in the database.
+ */
+function drupal_get_hash_salt() {
+  global $drupal_hash_salt;
+  return !empty($drupal_hash_salt) ? $drupal_hash_salt : '';
+}
+
+/**
  * Merges multiple arrays, recursively, and returns the merged array.
  *
  * This function is similar to PHP's array_merge_recursive() function, but it
@@ -2244,14 +2254,21 @@ function _drupal_bootstrap_configuration() {
   // Initialize the configuration, including variables from settings.php.
   drupal_settings_initialize();
 
-  // Make sure we are using the test database prefix in child Drupal sites.
-  _drupal_initialize_db_test_prefix();
-
   // Activate the class loader.
   drupal_classloader();
 
+  // Make sure we are using the test database prefix in child Drupal sites.
+  _drupal_initialize_db_test_prefix();
+
   // Load the procedural configuration system helper functions.
   require_once DRUPAL_ROOT . '/core/includes/config.inc';
+  // Redirect the user to the installation script if Drupal has not been
+  // installed yet (i.e., if no $databases array has been defined in the
+  // settings.php file) and we are not already installing.
+  if (empty($GLOBALS['databases']) && !drupal_installation_attempted()) {
+    include_once DRUPAL_ROOT . '/core/includes/install.inc';
+    install_goto('core/install.php');
+  }
 }
 
 /**
@@ -2347,15 +2364,6 @@ function _drupal_initialize_db_test_prefix() {
  * Initializes the database system by loading database.inc.
  */
 function _drupal_bootstrap_database() {
-  // Redirect the user to the installation script if Drupal has not been
-  // installed yet (i.e., if no $databases array has been defined in the
-  // settings.php file) and we are not already installing.
-  if (empty($GLOBALS['databases']) && !drupal_installation_attempted()) {
-    include_once DRUPAL_ROOT . '/core/includes/install.inc';
-    install_goto('core/install.php');
-  }
-
-
   // Initialize the database system. Note that the connection
   // won't be initialized until it is actually requested.
   require_once DRUPAL_ROOT . '/core/includes/database.inc';
@@ -2402,7 +2410,7 @@ function drupal_get_bootstrap_phase() {
  * On a normal page request the container is built by the kernel and passed in
  * to this function which stores it statically. Any full bootstrap outside of
  * the context of a page request will require a container with a minimal set of
- * services. If this function is called without the $reset parameter, and no
+ * services. If this function is called without the $rebuild parameter, and no
  * container object has been statically cached, it builds this minimal container,
  * registering the services that are required.
  *
@@ -2430,10 +2438,9 @@ function drupal_container(Container $new_container = NULL, $rebuild = FALSE) {
     $container = $new_container;
   }
   if (!isset($container)) {
-    // Return a ContainerBuilder instance with the bare essentials needed for any
-    // full bootstrap regardless of whether there will be a DrupalKernel involved.
-    // This will get merged with the full Kernel-built Container on normal page
-    // requests.
+    // This is only ever used by the installer and by run-tests.sh.
+    // @todo Remove this entire section once these have been converted to use a
+    //   kernel.
     $container = new ContainerBuilder();
 
     // Register active configuration storage.
@@ -2477,6 +2484,10 @@ function drupal_container(Container $new_container = NULL, $rebuild = FALSE) {
     $container
       ->register('keyvalue.database', 'Drupal\Core\KeyValueStore\KeyValueDatabaseFactory')
       ->addArgument(new Reference('database'));
+
+    $container->register('path.alias_manager', 'Drupal\Core\Path\AliasManager')
+      ->addArgument(new Reference('database'))
+      ->addArgument(new Reference('keyvalue.database'));
 
     // Register the EntityManager.
     $container->register('plugin.manager.entity', 'Drupal\Core\Entity\EntityManager');
@@ -2525,7 +2536,6 @@ function typed_data() {
  *   HMAC and timestamp.
  */
 function drupal_valid_test_ua($new_prefix = NULL) {
-  global $drupal_hash_salt;
   static $test_prefix;
 
   if (isset($new_prefix)) {
@@ -2538,10 +2548,10 @@ function drupal_valid_test_ua($new_prefix = NULL) {
   if (isset($_SERVER['HTTP_USER_AGENT']) && preg_match("/^(simpletest\d+);(.+);(.+);(.+)$/", $_SERVER['HTTP_USER_AGENT'], $matches)) {
     list(, $prefix, $time, $salt, $hmac) = $matches;
     $check_string =  $prefix . ';' . $time . ';' . $salt;
-    // We use the salt from settings.php to make the HMAC key, since
-    // the database is not yet initialized and we can't access any Drupal variables.
-    // The file properties add more entropy not easily accessible to others.
-    $key = $drupal_hash_salt . filectime(__FILE__) . fileinode(__FILE__);
+    // Use the salt from settings.php to create the HMAC key, since no services
+    // are available yet. The file properties add more entropy not easily
+    // accessible to others.
+    $key = drupal_get_hash_salt() . filectime(__FILE__) . fileinode(__FILE__);
     $time_diff = REQUEST_TIME - $time;
     // Since we are making a local request a 5 second time window is allowed,
     // and the HMAC must match.
@@ -2559,14 +2569,13 @@ function drupal_valid_test_ua($new_prefix = NULL) {
  * Generates a user agent string with a HMAC and timestamp for simpletest.
  */
 function drupal_generate_test_ua($prefix) {
-  global $drupal_hash_salt;
   static $key;
 
   if (!isset($key)) {
-    // We use the salt from settings.php to make the HMAC key, since
-    // the database is not yet initialized and we can't access any Drupal variables.
-    // The file properties add more entropy not easily accessible to others.
-    $key = $drupal_hash_salt . filectime(__FILE__) . fileinode(__FILE__);
+    // Use the salt from settings.php to create the HMAC key, since no services
+    // are available yet. The file properties add more entropy not easily
+    // accessible to others.
+    $key = drupal_get_hash_salt() . filectime(__FILE__) . fileinode(__FILE__);
   }
   // Generate a moderately secure HMAC based on the database credentials.
   $salt = uniqid('', TRUE);
@@ -2693,10 +2702,8 @@ function language($type, $reset = FALSE) {
   // When the language_manager service exists (is both defined and the 'request'
   // scope is active in the container), use it to get the language. Otherwise
   // return the default language.
-  try {
+  if (drupal_container()->isScopeActive('request')) {
     $language_manager = drupal_container()->get('language_manager', Container::NULL_ON_INVALID_REFERENCE);
-  }
-  catch (DependencyInjectionRuntimeException $e) {
   }
 
   if (isset($language_manager)) {
@@ -3102,7 +3109,7 @@ function drupal_classloader() {
       case 'apc':
         if (function_exists('apc_store')) {
           require_once DRUPAL_ROOT . '/core/vendor/symfony/class-loader/Symfony/Component/ClassLoader/ApcUniversalClassLoader.php';
-          $loader = new ApcUniversalClassLoader('drupal.' . $GLOBALS['drupal_hash_salt']);
+          $loader = new ApcUniversalClassLoader('drupal.' . drupal_get_hash_salt());
           break;
         }
       // Fall through to the default loader if APC was not loaded, so that the
@@ -3393,12 +3400,14 @@ function _drupal_shutdown_function() {
     }
   }
   catch (Exception $exception) {
-    // If we are displaying errors, then do so with no possibility of a further uncaught exception being thrown.
-   require_once DRUPAL_ROOT . '/core/includes/errors.inc';
-   if (error_displayable()) {
+    // If we are displaying errors, then do so with no possibility of a further
+    // uncaught exception being thrown.
+    require_once DRUPAL_ROOT . '/core/includes/errors.inc';
+    if (error_displayable()) {
       print '<h1>Uncaught exception thrown in shutdown function.</h1>';
       print '<p>' . _drupal_render_exception_safe($exception) . '</p><hr />';
     }
+    error_log($exception);
   }
 }
 
@@ -3430,54 +3439,6 @@ function drupal_check_memory_limit($required, $memory_limit = NULL) {
   // - The memory limit is greater than or equal to the memory required for
   //   the operation.
   return ((!$memory_limit) || ($memory_limit == -1) || (parse_size($memory_limit) >= parse_size($required)));
-}
-
-/**
- * Instantiates and statically caches a storage controller for generated PHP code.
- *
- * By default, this returns an instance of the
- * Drupal\Component\PhpStorage\MTimeProtectedFileStorage class.
- *
- * Classes implementing
- * Drupal\Component\PhpStorage\PhpStorageInterface can be registered for a
- * specific bin or as a default implementation.
- *
- * @param $name
- *   The name for which the storage controller should be returned. Defaults to
- *   'default'. The name is also used as the storage bin if one is not
- *   specified in the configuration.
- *
- * @return Drupal\Component\PhpStorage\PhpStorageInterface
- *   An instantiated storage controller for the specified name.
- *
- * @see Drupal\Component\PhpStorage\PhpStorageInterface
- */
-function drupal_php_storage($name = 'default') {
-  global $conf;
-  $storage_controllers = &drupal_static(__FUNCTION__);
-  if (!isset($storage_controllers[$name])) {
-    if (isset($conf['php_storage'][$name])) {
-      $configuration = $conf['php_storage'][$name];
-    }
-    elseif (isset($conf['php_storage']['default'])) {
-      $configuration = $conf['php_storage']['default'];
-    }
-    else {
-      $configuration = array(
-        'class' => 'Drupal\Component\PhpStorage\MTimeProtectedFileStorage',
-        'secret' => $GLOBALS['drupal_hash_salt'],
-      );
-    }
-    $class = isset($configuration['class']) ? $configuration['class'] : 'Drupal\Component\PhpStorage\MTimeProtectedFileStorage';
-    if (!isset($configuration['bin'])) {
-      $configuration['bin'] = $name;
-    }
-    if (!isset($configuration['directory'])) {
-      $configuration['directory'] = DRUPAL_ROOT . '/' . variable_get('file_public_path', conf_path() . '/files') . '/php';
-    }
-    $storage_controllers[$name] = new $class($configuration);
-  }
-  return $storage_controllers[$name];
 }
 
 /**

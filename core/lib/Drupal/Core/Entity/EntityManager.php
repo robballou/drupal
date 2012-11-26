@@ -9,8 +9,10 @@ namespace Drupal\Core\Entity;
 
 use Drupal\Component\Plugin\PluginManagerBase;
 use Drupal\Component\Plugin\Factory\DefaultFactory;
+use Drupal\Component\Plugin\Discovery\ProcessDecorator;
 use Drupal\Core\Plugin\Discovery\AlterDecorator;
 use Drupal\Core\Plugin\Discovery\AnnotatedClassDiscovery;
+use Drupal\Core\Plugin\Discovery\InfoHookDecorator;
 use Drupal\Core\Cache\CacheBackendInterface;
 
 /**
@@ -59,6 +61,10 @@ use Drupal\Core\Cache\CacheBackendInterface;
  *   Drupal\Core\Entity\EntityListController.
  * - render_controller_class: The name of the class that is used to render the
  *   entities. Defaults to Drupal\Core\Entity\EntityRenderController.
+ * - access_controller_class: The name of the class that is used for access
+ *   checks. The class must implement
+ *   Drupal\Core\Entity\EntityAccessControllerInterface. Defaults to
+ *   Drupal\Core\Entity\EntityAccessController.
  * - translation_controller_class: (optional) The name of the translation
  *   controller class that should be used to handle the translation process.
  *   See Drupal\translation_entity\EntityTranslationControllerInterface for more
@@ -211,6 +217,7 @@ class EntityManager extends PluginManagerBase {
     ),
     'list_controller_class' => 'Drupal\Core\Entity\EntityListController',
     'render_controller_class' => 'Drupal\Core\Entity\EntityRenderController',
+    'access_controller_class' => 'Drupal\Core\Entity\EntityAccessController',
     'static_cache' => TRUE,
     'translation' => array(),
     'bundles' => array(),
@@ -222,7 +229,11 @@ class EntityManager extends PluginManagerBase {
    */
   public function __construct() {
     // Allow the plugin definition to be altered by hook_entity_info_alter().
-    $this->discovery = new AlterDecorator(new AnnotatedClassDiscovery('Core', 'Entity'), 'entity_info');
+    $this->discovery = new AnnotatedClassDiscovery('Core', 'Entity');
+    $this->discovery = new InfoHookDecorator($this->discovery, 'entity_info');
+    $this->discovery = new AlterDecorator($this->discovery, 'entity_info');
+    // @todo Run process before altering, see http://drupal.org/node/1848964.
+    $this->discovery = new ProcessDecorator($this->discovery, array($this, 'processDefinition'));
     $this->factory = new DefaultFactory($this);
 
     // Entity type plugins includes translated strings, so each language is
@@ -260,7 +271,7 @@ class EntityManager extends PluginManagerBase {
   /**
    * Overrides Drupal\Component\Plugin\PluginManagerBase::processDefinition().
    */
-  protected function processDefinition(&$definition, $plugin_id) {
+  public function processDefinition(&$definition, $plugin_id) {
     parent::processDefinition($definition, $plugin_id);
 
     // @todo Remove this check once http://drupal.org/node/1780396 is resolved.

@@ -409,7 +409,7 @@ function system_theme_settings($form, &$form_state, $key = '') {
 
   // Some features are not always available
   $disabled = array();
-  if (!variable_get('user_pictures', 0)) {
+  if (!user_picture_enabled()) {
     $disabled['toggle_node_user_picture'] = TRUE;
     $disabled['toggle_comment_user_picture'] = TRUE;
   }
@@ -853,7 +853,7 @@ function system_modules($form, $form_state = array()) {
           $extra['disabled'] = TRUE;
         }
         elseif ($files[$requires]->status) {
-          $extra['requires'][$requires] = t('@module (<span class="admin-enabled">enabled</span>)', array('@module' => $requires_name));
+          $extra['requires'][$requires] = t('@module', array('@module' => $requires_name));
         }
         else {
           $extra['requires'][$requires] = t('@module (<span class="admin-disabled">disabled</span>)', array('@module' => $requires_name));
@@ -900,7 +900,7 @@ function system_modules($form, $form_state = array()) {
       // Hidden modules are unset already.
       if (isset($visible_files[$required_by])) {
         if ($files[$required_by]->status == 1 && $module->status == 1) {
-          $extra['required_by'][] = t('@module (<span class="admin-enabled">enabled</span>)', array('@module' => $files[$required_by]->info['name']));
+          $extra['required_by'][] = t('@module', array('@module' => $files[$required_by]->info['name']));
           $extra['disabled'] = TRUE;
         }
         else {
@@ -919,11 +919,9 @@ function system_modules($form, $form_state = array()) {
       '#collapsible' => TRUE,
       '#theme' => 'system_modules_fieldset',
       '#header' => array(
-        array('data' => t('Enabled'), 'class' => array('checkbox')),
-        t('Name'),
-        array('data' => t('Version'), 'class' => array(RESPONSIVE_PRIORITY_MEDIUM)),
-        array('data' => t('Description'), 'class' => array(RESPONSIVE_PRIORITY_LOW)),
-        array('data' => t('Operations'), 'colspan' => 3),
+        array('data' => t('<span class="element-invisible">Enabled</span>'), 'class' => array('checkbox')),
+        array('data' => t('Name'), 'class' => array('name')),
+        array('data' => t('Description'), 'class' => array('description', RESPONSIVE_PRIORITY_LOW)),
       ),
       // Ensure that the "Core" package fieldset comes first.
       '#weight' => $package == 'Core' ? -10 : NULL,
@@ -933,6 +931,7 @@ function system_modules($form, $form_state = array()) {
   // Lastly, sort all fieldsets by title.
   uasort($form['modules'], 'element_sort_by_title');
 
+  $form['#attached']['library'][] = array('system', 'drupal.system.modules');
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -1021,6 +1020,7 @@ function _system_modules_build_row($info, $extra) {
       '#type' => 'checkbox',
       '#title' => t('Enable'),
       '#default_value' => $extra['enabled'],
+      '#attributes' => array('role' => 'disabled'),
     );
     if ($extra['disabled']) {
       $form['enable']['#disabled'] = TRUE;
@@ -1410,10 +1410,11 @@ function system_site_information_settings($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Front page'),
   );
+  $front_page = $site_config->get('page.front') != 'user' ? drupal_container()->get('path.alias_manager')->getPathAlias($site_config->get('page.front')) : '';
   $form['front_page']['site_frontpage'] = array(
     '#type' => 'textfield',
     '#title' => t('Default front page'),
-    '#default_value' => ($site_config->get('page.front') != 'user' ? drupal_get_path_alias($site_config->get('page.front')) : ''),
+    '#default_value' => $front_page,
     '#size' => 40,
     '#description' => t('Optionally, specify a relative URL to display as the front page. Leave blank to display the default front page.'),
     '#field_prefix' => url(NULL, array('absolute' => TRUE)),
@@ -1455,7 +1456,7 @@ function system_site_information_settings_validate($form, &$form_state) {
   }
   else {
     // Get the normal path of the front page.
-    form_set_value($form['front_page']['site_frontpage'], drupal_get_normal_path($form_state['values']['site_frontpage']), $form_state);
+    form_set_value($form['front_page']['site_frontpage'], drupal_container()->get('path.alias_manager')->getSystemPath($form_state['values']['site_frontpage']), $form_state);
   }
   // Validate front page path.
   if (!drupal_valid_path($form_state['values']['site_frontpage'])) {
@@ -1463,10 +1464,10 @@ function system_site_information_settings_validate($form, &$form_state) {
   }
   // Get the normal paths of both error pages.
   if (!empty($form_state['values']['site_403'])) {
-    form_set_value($form['error_page']['site_403'], drupal_get_normal_path($form_state['values']['site_403']), $form_state);
+    form_set_value($form['error_page']['site_403'], drupal_container()->get('path.alias_manager')->getSystemPath($form_state['values']['site_403']), $form_state);
   }
   if (!empty($form_state['values']['site_404'])) {
-    form_set_value($form['error_page']['site_404'], drupal_get_normal_path($form_state['values']['site_404']), $form_state);
+    form_set_value($form['error_page']['site_404'], drupal_container()->get('path.alias_manager')->getSystemPath($form_state['values']['site_404']), $form_state);
   }
   // Validate 403 error path.
   if (!empty($form_state['values']['site_403']) && !drupal_valid_path($form_state['values']['site_403'])) {
@@ -1507,9 +1508,13 @@ function system_cron_settings($form, &$form_state) {
     '#submit' => array('system_run_cron_submit'),
   );
 
-  $status = '<p>' . t('Last run: %cron-last ago.', array('%cron-last' => format_interval(REQUEST_TIME - variable_get('cron_last')),)) . '</p>';
+  $status = '<p>' . t('Last run: %cron-last ago.', array('%cron-last' => format_interval(REQUEST_TIME - state()->get('system.cron_last')))) . '</p>';
   $form['status'] = array(
     '#markup' => $status,
+  );
+
+  $form['cron_url'] = array(
+    '#markup' => '<p>' . t('To run cron from outside the site, go to <a href="!cron">!cron</a>', array('!cron' => url('cron/' . state()->get('system.cron_key'), array('absolute' => TRUE)))) . '</p>',
   );
 
   $form['cron'] = array(
@@ -2493,33 +2498,54 @@ function theme_system_modules_fieldset($variables) {
 
   // Individual table headers.
   $rows = array();
-  // Iterate through all the modules, which are
-  // children of this fieldset.
+  // Iterate through all the modules, which are children of this fieldset.
   foreach (element_children($form) as $key) {
-    // Stick it into $module for easier accessing.
+    // Stick the key into $module for easier access.
     $module = $form[$key];
+    // Create the row for the table.
     $row = array();
+    // Add the checkbox into the first cell.
     unset($module['enable']['#title']);
+    $module['#requires'] = array_filter($module['#requires']);
+    $module['#required_by'] = array_filter($module['#required_by']);
+
+    $requires = !empty($module['#requires']);
+    $required_by = !empty($module['#required_by']);
+    $version = !empty($module['version']['#markup']);
+
     $row[] = array('class' => array('checkbox'), 'data' => drupal_render($module['enable']));
-    $label = '<label';
-    if (isset($module['enable']['#id'])) {
-      $label .= ' for="' . $module['enable']['#id'] . '"';
-    }
-    $row[] = $label . '><strong>' . drupal_render($module['name']) . '</strong></label>';
-    $row[] = drupal_render($module['version']);
+
+    // Add the module label and expand/collapse functionalty.
+    $col2 = '<label for="' . $module['enable']['#id'] . '" class="module-name">' . drupal_render($module['name']) . '</label>';
+    $row[] = array('class' => array('module'), 'data' => $col2);
+
     // Add the description, along with any modules it requires.
-    $description = drupal_render($module['description']);
-    if ($module['#requires']) {
-      $description .= '<div class="admin-requirements">' . t('Requires: !module-list', array('!module-list' => implode(', ', $module['#requires']))) . '</div>';
+    $description = '<span class="details"><span class="text">' . drupal_render($module['description']) . '</span></span>';
+    if ($version || $requires || $required_by) {
+      $description .= ' <div class="requirements">';
+      if ($version) {
+        $description .= '<div class="admin-requirements">' . t('Version: !module-version', array('!module-version' => drupal_render($module['version']))) . '</div>';
+      }
+      if ($requires) {
+        $description .= '<div class="admin-requirements">' . t('Requires: !module-list', array('!module-list' => implode(', ', $module['#requires']))) . '</div>';
+      }
+      if ($required_by) {
+        $description .= '<div class="admin-requirements">' . t('Required by: !module-list', array('!module-list' => implode(', ', $module['#required_by']))) . '</div>';
+      }
+      $description .= '</div>';
     }
-    if ($module['#required_by']) {
-      $description .= '<div class="admin-requirements">' . t('Required by: !module-list', array('!module-list' => implode(', ', $module['#required_by']))) . '</div>';
-    }
-    $row[] = array('data' => $description, 'class' => array('description'));
-    // Display links (such as help or permissions) in their own columns.
+    $links = '';
     foreach (array('help', 'permissions', 'configure') as $key) {
-      $row[] = array('data' => drupal_render($module['links'][$key]), 'class' => array($key));
+      $links .= drupal_render($module['links'][$key]);
     }
+    if ($links) {
+      $description .= '  <div class="links">';
+      $description .= $links;
+      $description .= '</div>';
+    }
+    $col4 = '<div class="inner" tabindex="0" role="button"><span class="module-description-prefix element-invisible">Show description</span> ' . $description . '</div>';
+    $row[] = array('class' => array('description', 'expand'), 'data' => $col4);
+
     $rows[] = $row;
   }
 

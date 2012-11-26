@@ -62,9 +62,6 @@ function node_add_page() {
  *   An associative array containing:
  *   - content: An array of content types.
  *
- * @return string
- *   An HTML-formatted string.
- *
  * @see node_add_page()
  *
  * @ingroup themeable
@@ -136,7 +133,6 @@ function node_preview(Node $node) {
       // user ID 0 denotes the anonymous user.
       if ($user = user_load_by_name($node->name)) {
         $node->uid = $user->uid;
-        $node->picture = $user->picture;
       }
       else {
         $node->uid = 0; // anonymous user
@@ -145,7 +141,6 @@ function node_preview(Node $node) {
     elseif ($node->uid) {
       $user = user_load($node->uid);
       $node->name = $user->name;
-      $node->picture = $user->picture;
     }
 
     $node->changed = REQUEST_TIME;
@@ -171,6 +166,7 @@ function node_preview(Node $node) {
  *   - node: The node entity which is being previewed.
  *
  * @see NodeFormController::preview()
+ * @see node_preview()
  *
  * @ingroup themeable
  */
@@ -211,6 +207,7 @@ function theme_node_preview($variables) {
  * @return array
  *   A form array.
  *
+ * @see node_delete_confirm_submit()
  * @see node_menu()
  */
 function node_delete_confirm($form, &$form_state, $node) {
@@ -324,6 +321,7 @@ function node_revision_overview($node) {
  *
  * @see node_menu()
  * @see node_revision_revert_confirm_submit()
+ * @ingroup forms
  */
 function node_revision_revert_confirm($form, $form_state, $node_revision) {
   $form['#node_revision'] = $node_revision;
@@ -365,6 +363,7 @@ function node_revision_revert_confirm_submit($form, &$form_state) {
  *
  * @see node_menu()
  * @see node_revision_delete_confirm_submit()
+ * @ingroup forms
  */
 function node_revision_delete_confirm($form, $form_state, $node_revision) {
   $form['#node_revision'] = $node_revision;

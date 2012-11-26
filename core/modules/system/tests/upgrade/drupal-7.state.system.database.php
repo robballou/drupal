@@ -12,6 +12,14 @@
 
 // Update system settings to known values.
 db_merge('variable')
+  ->key(array('name' => 'node_cron_views_scale'))
+  ->fields(array('value' => serialize(1.0 / 2000)))
+  ->execute();
+db_merge('variable')
+  ->key(array('name' => 'statistics_day_timestamp'))
+  ->fields(array('value' => serialize(1352070595)))
+  ->execute();
+db_merge('variable')
   ->key(array('name' => 'update_last_check'))
   ->fields(array('value' => serialize(1304208000)))
   ->execute();
@@ -30,4 +38,12 @@ db_merge('variable')
 db_merge('variable')
   ->key(array('name' => 'cron_last'))
   ->fields(array('value' => serialize(1304208002)))
+  ->execute();
+db_merge('variable')
+  ->key(array('name' => 'cron_key'))
+  ->fields(array('value' => serialize('kdm95qppDDlyZrcUOx453YwQqDA4DNmxi4VQcxzFU9M')))
+  ->execute();
+db_merge('variable')
+  ->key(array('name' => 'node_cron_comments_scale'))
+  ->fields(array('value' => serialize(1.0 / 1000)))
   ->execute();

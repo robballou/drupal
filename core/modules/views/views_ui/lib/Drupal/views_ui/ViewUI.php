@@ -251,6 +251,7 @@ class ViewUI implements ViewStorageInterface {
         // which display the user wants to update, views_ui_standard_submit will
         // take care of running the regular submit handler as appropriate.
         '#submit' => array(array($this, 'standardSubmit')),
+        '#button_type' => 'primary',
       );
       // Form API button click detection requires the button's #value to be the
       // same between the form build of the initial page request, and the initial
@@ -991,7 +992,7 @@ class ViewUI implements ViewStorageInterface {
   /**
    * Implements \Drupal\Core\TypedData\AccessibleInterface::access().
    */
-  public function access(\Drupal\user\User $account = NULL) {
+  public function access($operation = 'view', \Drupal\user\Plugin\Core\Entity\User $account = NULL) {
     return $this->__call(__FUNCTION__, func_get_args());
   }
 

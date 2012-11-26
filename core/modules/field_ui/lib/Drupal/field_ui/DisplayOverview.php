@@ -101,7 +101,18 @@ class DisplayOverview extends OverviewBase {
     // Field rows.
     foreach ($instances as $name => $instance) {
       $field = field_info_field($instance['field_name']);
-      $display = $instance['display'][$this->view_mode];
+
+      if (isset($instance['display'][$this->view_mode])) {
+        $display = $instance['display'][$this->view_mode];
+      }
+      else {
+        $display = array(
+          'type' => 'hidden',
+          'label' => 'above',
+          'weight' => 0,
+        );
+      }
+
       $table[$name] = array(
         '#attributes' => array('class' => array('draggable', 'tabledrag-leaf')),
         '#row_type' => 'field',
@@ -382,6 +393,7 @@ class DisplayOverview extends OverviewBase {
         // spinners will be added manually by the client-side script.
         'progress' => 'none',
       ),
+      '#attributes' => array('class' => array('element-invisible'))
     );
 
     $form['actions'] = array('#type' => 'actions');
@@ -461,7 +473,7 @@ class DisplayOverview extends OverviewBase {
         $view_mode_settings = field_view_mode_settings($this->entity_type, $this->bundle);
         if (!empty($value) && empty($view_mode_settings[$view_mode_name]['custom_settings'])) {
           $view_mode_label = $entity_info['view_modes'][$view_mode_name]['label'];
-          $path = _field_ui_bundle_admin_path($this->entity_type, $this->bundle) . "/display/$view_mode_name";
+          $path = field_ui_bundle_admin_path($this->entity_type, $this->bundle) . "/display/$view_mode_name";
           drupal_set_message(t('The %view_mode mode now uses custom display settings. You might want to <a href="@url">configure them</a>.', array('%view_mode' => $view_mode_label, '@url' => url($path))));
           // Initialize the newly customized view mode with the display settings
           // from the default view mode.

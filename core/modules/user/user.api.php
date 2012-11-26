@@ -126,10 +126,6 @@ function hook_user_cancel($edit, $account, $method) {
         ->fields(array('uid' => 0))
         ->condition('uid', $account->uid)
         ->execute();
-      // Clean history.
-      db_delete('history')
-        ->condition('uid', $account->uid)
-        ->execute();
       break;
   }
 }
@@ -257,11 +253,12 @@ function hook_user_presave($account) {
  *
  * Note that when this hook is invoked, the changes have not yet been written to
  * the database, because a database transaction is still in progress. The
- * transaction is not finalized until the save operation is entirely completed
- * and user_save() goes out of scope. You should not rely on data in the
- * database at this time as it is not updated yet. You should also note that any
- * write/update database queries executed from this hook are also not committed
- * immediately. Check user_save() and db_transaction() for more info.
+ * transaction is not finalized until the insert operation is entirely completed
+ * and \Drupal\user\DataStorageController::save() goes out of scope. You should
+ * not rely on data in the database at this time as it is not updated yet. You
+ * should also note that any write/update database queries executed from this hook
+ * are also not committed immediately. Check \Drupal\user\DataStorageController::save()
+ * and db_transaction() for more info.
  *
  * @param $account
  *   The user account object.
@@ -283,11 +280,12 @@ function hook_user_insert($account) {
  *
  * Note that when this hook is invoked, the changes have not yet been written to
  * the database, because a database transaction is still in progress. The
- * transaction is not finalized until the save operation is entirely completed
- * and user_save() goes out of scope. You should not rely on data in the
- * database at this time as it is not updated yet. You should also note that any
- * write/update database queries executed from this hook are also not committed
- * immediately. Check user_save() and db_transaction() for more info.
+ * transaction is not finalized until the update operation is entirely completed
+ * and \Drupal\user\DataStorageController::save() goes out of scope. You should not
+ * rely on data in the database at this time as it is not updated yet. You should
+ * also note that any write/update database queries executed from this hook are
+ * also not committed immediately. Check \Drupal\user\DataStorageController::save()
+ * and db_transaction() for more info.
  *
  * @param $account
  *   The user account object.
@@ -351,12 +349,17 @@ function hook_user_logout($account) {
  * @see hook_entity_view()
  */
 function hook_user_view($account, $view_mode, $langcode) {
-  $account->content['user_picture'] = array(
-    '#markup' => theme('user_picture', array('account' => $account)),
-    '#weight' => -10,
+  if (!isset($account->content['summary'])) {
+    $account->content['summary'] = array();
+  }
+  $account->content['summary'] += array(
+    '#type' => 'user_profile_category',
+    '#title' => t('History'),
+    '#attributes' => array('class' => array('user-member')),
+    '#weight' => 5,
   );
-  $account->content['member_for'] = array(
-    '#type' => 'item',
+  $account->content['summary']['member_for'] = array(
+    '#type' => 'user_profile_item',
     '#title' => t('Member for'),
     '#markup' => format_interval(REQUEST_TIME - $account->created),
   );

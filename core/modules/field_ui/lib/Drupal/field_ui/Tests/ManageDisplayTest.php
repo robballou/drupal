@@ -168,14 +168,35 @@ class ManageDisplayTest extends FieldUiTestBase {
   }
 
   /**
+   * Tests that field instances with no explicit display settings do not break.
+   */
+  function testNonInitializedFields() {
+    // Create a test field.
+    $edit = array(
+      'fields[_add_new_field][label]' => 'Test',
+      'fields[_add_new_field][field_name]' => 'test',
+    );
+    $this->fieldUIAddNewField('admin/structure/types/manage/' . $this->type, $edit);
+
+    // Check that no settings have been set for the 'teaser' mode.
+    $instance = field_info_instance('node', 'field_test', $this->type);
+    $this->assertFalse(isset($instance['display']['teaser']));
+
+    // Check that the field appears as 'hidden' on the 'Manage display' page
+    // for the 'teaser' mode.
+    $this->drupalGet('admin/structure/types/manage/' . $this->type . '/display/teaser');
+    $this->assertFieldByName('fields[field_test][type]', 'hidden', 'The field is displayed as \'hidden \'.');
+  }
+
+  /**
    * Tests hiding the view modes fieldset when there's only one available.
    */
   function testSingleViewMode() {
-    $this->drupalGet('admin/config/people/accounts/display');
+    $this->drupalGet('admin/structure/taxonomy/' . $this->vocabulary . '/display');
     $this->assertNoText('Use custom display settings for the following view modes', 'Custom display settings fieldset found.');
 
     // This may not trigger a notice when 'view_modes_custom' isn't available.
-    $this->drupalPost('admin/config/people/accounts/display', array(), t('Save'));
+    $this->drupalPost('admin/structure/taxonomy/' . $this->vocabulary . '/display', array(), t('Save'));
   }
 
   /**

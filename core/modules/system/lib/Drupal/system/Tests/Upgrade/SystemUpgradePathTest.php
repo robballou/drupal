@@ -35,7 +35,6 @@ class SystemUpgradePathTest extends UpgradePathTestBase {
 
     // Verify that variables were properly upgraded.
     $expected_config['system.cron'] = array(
-      'key' => 'kdm95qppDDlyZrcUOx453YwQqDA4DNmxi4VQcxzFU9M',
       'threshold.autorun' => '86400',
       'threshold.requirements_warning' => '86400',
       'threshold.requirements_error' => '172800',
@@ -77,6 +76,17 @@ class SystemUpgradePathTest extends UpgradePathTestBase {
 
     $expected_config['user.settings'] = array(
       'cancel_method' => 'user_cancel_reassign',
+    );
+
+    $expected_config['system.filter'] = array(
+      'protocols.0' => 'http',
+      'protocols.1' => 'https',
+      'protocols.2' => 'ftp',
+      'protocols.3' => 'mailto',
+    );
+
+    $expected_config['filter.settings'] = array(
+      'fallback_format' => 'plain_text'
     );
 
     foreach ($expected_config as $file => $values) {

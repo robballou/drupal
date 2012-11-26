@@ -55,7 +55,7 @@ function user_help($path, $arg) {
       $output .= '<dt>' . t('User roles and permissions') . '</dt>';
       $output .= '<dd>' . t('<em>Roles</em> are used to group and classify users; each user can be assigned one or more roles. By default there are two roles: <em>anonymous user</em> (users that are not logged in) and <em>authenticated user</em> (users that are registered and logged in). Depending on choices you made when you installed Drupal, the installation process may have defined more roles, and you can create additional custom roles on the <a href="@roles">Roles page</a>. After creating roles, you can set permissions for each role on the <a href="@permissions_user">Permissions page</a>. Granting a permission allows users who have been assigned a particular role to perform an action on the site, such as viewing a particular type of content, editing or creating content, administering settings for a particular module, or using a particular function of the site (such as search).', array('@permissions_user' => url('admin/people/permissions'), '@roles' => url('admin/people/roles'))) . '</dd>';
       $output .= '<dt>' . t('Account settings') . '</dt>';
-      $output .= '<dd>' . t('The <a href="@accounts">Account settings page</a> allows you to manage settings for the displayed name of the anonymous user role, personal contact forms, user registration, and account cancellation. On this page you can also manage settings for account personalization (including signatures and user pictures), and adapt the text for the e-mail messages that are sent automatically during the user registration process.', array('@accounts'  => url('admin/config/people/accounts'))) . '</dd>';
+      $output .= '<dd>' . t('The <a href="@accounts">Account settings page</a> allows you to manage settings for the displayed name of the anonymous user role, personal contact forms, user registration, and account cancellation. On this page you can also manage settings for account personalization (including signatures), and adapt the text for the e-mail messages that are sent automatically during the user registration process.', array('@accounts'  => url('admin/config/people/accounts'))) . '</dd>';
       $output .= '</dl>';
       return $output;
     case 'admin/people/create':
@@ -85,10 +85,6 @@ function user_help($path, $arg) {
  */
 function user_theme() {
   return array(
-    'user_picture' => array(
-      'variables' => array('account' => NULL),
-      'template' => 'user-picture',
-    ),
     'user_profile' => array(
       'render element' => 'elements',
       'template' => 'user-profile',
@@ -142,6 +138,44 @@ function user_uri($user) {
  */
 function user_label($entity_type, $entity) {
   return user_format_name($entity);
+}
+
+/**
+ * Populates $entity->account for each prepared entity.
+ *
+ * Called by hook_entity_prepare_view() implementations.
+ *
+ * @param array $entities
+ *   The entities keyed by entity ID.
+ */
+function user_attach_accounts(array $entities) {
+  $uids = array();
+  foreach ($entities as $entity) {
+    $uids[] = $entity->uid;
+  }
+  $uids = array_unique($uids);
+  $accounts = user_load_multiple($uids);
+  $anonymous = drupal_anonymous_user();
+  foreach ($entities as $id => $entity) {
+    if (isset($accounts[$entity->uid])) {
+      $entities[$id]->account = $accounts[$entity->uid];
+    }
+    else {
+      $entities[$id]->account = $anonymous;
+    }
+  }
+}
+
+/**
+ * Returns whether this site supports the default user picture feature.
+ *
+ * This approach preserves compatibility with node/comment templates. Alternate
+ * user picture implementations (e.g., Gravatar) should provide their own
+ * add/edit/delete forms and populate the 'picture' variable during the
+ * preprocess stage.
+ */
+function user_picture_enabled() {
+  return (bool) field_info_instance('user', 'user_picture', 'user');
 }
 
 /**
@@ -329,29 +363,6 @@ function user_validate_name($name) {
 }
 
 /**
- * Validates an image uploaded by a user.
- *
- * @see AccountFormController::form()
- */
-function user_validate_picture(&$form, &$form_state) {
-  // If required, validate the uploaded picture.
-  $validators = array(
-    'file_validate_is_image' => array(),
-    'file_validate_image_resolution' => array(variable_get('user_picture_dimensions', '85x85')),
-    'file_validate_size' => array(variable_get('user_picture_file_size', '30') * 1024),
-  );
-
-  // Save the file as a temporary file.
-  $file = file_save_upload('picture_upload', $validators);
-  if ($file === FALSE) {
-    form_set_error('picture_upload', t("Failed to upload the picture image; the %directory directory doesn't exist or is not writable.", array('%directory' => variable_get('user_picture_path', 'pictures'))));
-  }
-  elseif ($file !== NULL) {
-    $form_state['values']['picture_upload'] = $file;
-  }
-}
-
-/**
  * Generate a random alphanumeric password.
  */
 function user_password($length = 10) {
@@ -521,45 +532,6 @@ function user_permission() {
 }
 
 /**
- * Implements hook_file_download().
- *
- * Ensure that user pictures (avatars) are always downloadable.
- */
-function user_file_download($uri) {
-  if (strpos(file_uri_target($uri), variable_get('user_picture_path', 'pictures') . '/picture-') === 0) {
-    $info = image_get_info($uri);
-    return array('Content-Type' => $info['mime_type']);
-  }
-}
-
-/**
- * Implements hook_file_move().
- */
-function user_file_move(File $file, File $source) {
-  // If a user's picture is replaced with a new one, update the record in
-  // the users table.
-  if (isset($file->fid) && isset($source->fid) && $file->fid != $source->fid) {
-    db_update('users')
-      ->fields(array(
-        'picture' => $file->fid,
-      ))
-      ->condition('picture', $source->fid)
-      ->execute();
-  }
-}
-
-/**
- * Implements hook_file_predelete().
- */
-function user_file_predelete(File $file) {
-  // Remove any references to the file.
-  db_update('users')
-    ->fields(array('picture' => 0))
-    ->condition('picture', $file->fid)
-    ->execute();
-}
-
-/**
  * Implements hook_search_info().
  */
 function user_search_info() {
@@ -620,10 +592,6 @@ function user_search_execute($keys = NULL, $conditions = NULL) {
  * Implements hook_user_view().
  */
 function user_user_view($account) {
-  $account->content['user_picture'] = array(
-    '#markup' => theme('user_picture', array('account' => $account)),
-    '#weight' => -10,
-  );
   $account->content['member_for'] = array(
     '#type' => 'item',
     '#title' => t('Member for'),
@@ -655,8 +623,7 @@ function user_validate_current_pass(&$form, &$form_state) {
     // form values like password_confirm that have their own validation
     // that prevent them from being empty if they are changed.
     if ((strlen(trim($form_state['values'][$key])) > 0) && ($form_state['values'][$key] != $account->$key)) {
-      require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'core/includes/password.inc');
-      $current_pass_failed = empty($form_state['values']['current_pass']) || !user_check_password($form_state['values']['current_pass'], $account);
+      $current_pass_failed = empty($form_state['values']['current_pass']) || !drupal_container()->get('password')->check($form_state['values']['current_pass'], $account);
       if ($current_pass_failed) {
         form_set_error('current_pass', t("Your current password is missing or incorrect; it's required to change the %name.", array('%name' => $name)));
         form_set_error($key);
@@ -812,14 +779,15 @@ function user_block_view($delta = '') {
       }
       return $block;
 
+    // @todo: Move this block to statistics.module and remove dependency on
+    //   user.access.
     case 'online':
       if (user_access('access content')) {
         // Count users active within the defined period.
         $interval = REQUEST_TIME - $block_config->get('seconds_online');
 
-        // Perform database queries to gather online user lists. We use s.timestamp
-        // rather than u.access because it is much faster.
-        $authenticated_count = db_query("SELECT COUNT(DISTINCT s.uid) FROM {sessions} s WHERE s.timestamp >= :timestamp AND s.uid > 0", array(':timestamp' => $interval))->fetchField();
+        // Perform database queries to gather online user lists.
+        $authenticated_count = db_query("SELECT COUNT(uid) FROM {users} WHERE access >= :timestamp", array(':timestamp' => $interval))->fetchField();
 
         $block['subject'] = t('Who\'s online');
         $block['content'] = array(
@@ -831,9 +799,8 @@ function user_block_view($delta = '') {
         // Display a list of currently online users.
         $max_users = $block_config->get('max_list_count');
         if ($authenticated_count && $max_users) {
-          $items = db_query_range('SELECT u.uid, u.name, MAX(s.timestamp) AS max_timestamp FROM {users} u INNER JOIN {sessions} s ON u.uid = s.uid WHERE s.timestamp >= :interval AND s.uid > 0 GROUP BY u.uid, u.name ORDER BY max_timestamp DESC', 0, $max_users, array(':interval' => $interval))->fetchAll();
-
-          foreach ($items as $account) {
+          $uids = db_query_range('SELECT uid FROM {users} WHERE access >= :interval AND uid > 0 ORDER BY access DESC', 0, $max_users, array(':interval' => $interval))->fetchCol();
+          foreach (user_load_multiple($uids) as $account) {
             $block['content']['#items'][] = theme('username', array('account' => $account));
           }
         }
@@ -886,52 +853,20 @@ function user_format_name($account) {
 }
 
 /**
- * Process variables for user-picture.tpl.php.
+ * Implements hook_template_preprocess_default_variables_alter().
  *
- * The $variables array contains the following arguments:
- * - $account: A user, node or comment object with 'name', 'uid' and 'picture'
- *   fields.
- *
- * @see user-picture.tpl.php
+ * @see user_user_login()
+ * @see user_user_logout()
  */
-function template_preprocess_user_picture(&$variables) {
-  $variables['user_picture'] = '';
-  if (variable_get('user_pictures', 0)) {
-    $account = $variables['account'];
-    if (!empty($account->picture)) {
-      // @TODO: Ideally this function would only be passed file entities, but
-      // since there's a lot of legacy code that JOINs the {users} table to
-      // {node} or {comments} and passes the results into this function if we
-      // a numeric value in the picture field we'll assume it's a file id
-      // and load it for them. Once we've got user_load_multiple() and
-      // comment_load_multiple() functions the user module will be able to load
-      // the picture files in mass during the object's load process.
-      if (is_numeric($account->picture)) {
-        $account->picture = file_load($account->picture);
-      }
-      if (!empty($account->picture->uri)) {
-        $filepath = $account->picture->uri;
-      }
-    }
-    elseif (variable_get('user_picture_default', '')) {
-      $filepath = variable_get('user_picture_default', '');
-    }
-    if (isset($filepath)) {
-      $alt = t("@user's picture", array('@user' => user_format_name($account)));
-      // If the image does not have a valid Drupal scheme (for eg. HTTP),
-      // don't load image styles.
-      if (module_exists('image') && file_valid_uri($filepath) && $style = variable_get('user_picture_style', '')) {
-        $variables['user_picture'] = theme('image_style', array('style_name' => $style, 'uri' => $filepath, 'alt' => $alt, 'title' => $alt));
-      }
-      else {
-        $variables['user_picture'] = theme('image', array('uri' => $filepath, 'alt' => $alt, 'title' => $alt));
-      }
-      if (!empty($account->uid) && user_access('access user profiles')) {
-        $attributes = array('attributes' => array('title' => t('View user profile.')), 'html' => TRUE);
-        $variables['user_picture'] = l($variables['user_picture'], "user/$account->uid", $attributes);
-      }
-    }
-  }
+function user_template_preprocess_default_variables_alter(&$variables) {
+  global $user;
+
+  $variables['user'] = clone $user;
+  // Remove password and session IDs, since themes should not need nor see them.
+  unset($variables['user']->pass, $variables['user']->sid, $variables['user']->ssid);
+
+  $variables['is_admin'] = user_access('access administration pages');
+  $variables['logged_in'] = ($user->uid > 0);
 }
 
 /**
@@ -1053,11 +988,6 @@ function user_is_logged_in() {
   return (bool) $GLOBALS['user']->uid;
 }
 
-function user_register() {
-  $account = entity_create('user', array());
-  return entity_get_form($account, 'register');
-}
-
 function user_register_access() {
   return user_is_anonymous() && (config('user.settings')->get('register') != USER_REGISTER_ADMINISTRATORS_ONLY);
 }
@@ -1143,9 +1073,14 @@ function user_menu() {
 
   $items['user/register'] = array(
     'title' => 'Create new account',
-    'page callback' => 'user_register',
-    'access callback' => 'user_register_access',
     'type' => MENU_LOCAL_TASK,
+    // @todo This route is now declared in user.routing.yml, so the below are
+    //   only needed for drupal_valid_path(). Without a non-empty (but not
+    //   necessarily valid) page callback, _menu_router_build() overrides the
+    //   access callback to 0. Remove once drupal_valid_path works with the new
+    //   routing system: http://drupal.org/node/1793520.
+    'page callback' => 'NOT_USED',
+    'access callback' => 'user_register_access',
   );
 
   $items['user/password'] = array(
@@ -1247,7 +1182,7 @@ function user_menu() {
   );
   $items['admin/config/people/accounts'] = array(
     'title' => 'Account settings',
-    'description' => 'Configure default behavior of users, including registration requirements, e-mails, fields, and user pictures.',
+    'description' => 'Configure default behavior of users, including registration requirements, e-mails, and fields.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('user_admin_settings'),
     'access arguments' => array('administer users'),
@@ -1604,7 +1539,7 @@ function user_login_authenticate_validate($form, &$form_state) {
     // independent of the per-user limit to catch attempts from one IP to log
     // in to many different user accounts.  We have a reasonably high limit
     // since there may be only one apparent IP for all users at an institution.
-    if (!flood_is_allowed('failed_login_attempt_ip', $flood_config->get('ip_limit'), $flood_config->get('ip_window'))) {
+    if (!drupal_container()->get('flood')->isAllowed('user.failed_login_ip', $flood_config->get('ip_limit'), $flood_config->get('ip_window'))) {
       $form_state['flood_control_triggered'] = 'ip';
       return;
     }
@@ -1625,7 +1560,7 @@ function user_login_authenticate_validate($form, &$form_state) {
 
       // Don't allow login if the limit for this user has been reached.
       // Default is to allow 5 failed attempts every 6 hours.
-      if (!flood_is_allowed('failed_login_attempt_user', $flood_config->get('user_limit'), $flood_config->get('user_window'), $identifier)) {
+      if (!drupal_container()->get('flood')->isAllowed('user.failed_login_user', $flood_config->get('user_limit'), $flood_config->get('user_window'), $identifier)) {
         $form_state['flood_control_triggered'] = 'user';
         return;
       }
@@ -1647,10 +1582,10 @@ function user_login_final_validate($form, &$form_state) {
   $flood_config = config('user.flood');
   if (empty($form_state['uid'])) {
     // Always register an IP-based failed login event.
-    flood_register_event('failed_login_attempt_ip', $flood_config->get('ip_window'));
+    drupal_container()->get('flood')->register('user.failed_login_ip', $flood_config->get('ip_window'));
     // Register a per-user failed login event.
     if (isset($form_state['flood_control_user_identifier'])) {
-      flood_register_event('failed_login_attempt_user', $flood_config->get('user_window'), $form_state['flood_control_user_identifier']);
+      drupal_container()->get('flood')->register('user.failed_login_user', $flood_config->get('user_window'), $form_state['flood_control_user_identifier']);
     }
 
     if (isset($form_state['flood_control_triggered'])) {
@@ -1670,7 +1605,7 @@ function user_login_final_validate($form, &$form_state) {
   elseif (isset($form_state['flood_control_user_identifier'])) {
     // Clear past failures for this user so as not to block a user who might
     // log in and out more than once in an hour.
-    flood_clear_event('failed_login_attempt_user', $form_state['flood_control_user_identifier']);
+    drupal_container()->get('flood')->clear('user.failed_login_user', $form_state['flood_control_user_identifier']);
   }
 }
 
@@ -1689,14 +1624,13 @@ function user_authenticate($name, $password) {
   if (!empty($name) && !empty($password)) {
     $account = user_load_by_name($name);
     if ($account) {
-      // Allow alternate password hashing schemes.
-      require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'core/includes/password.inc');
-      if (user_check_password($password, $account)) {
+      $password_hasher = drupal_container()->get('password');
+      if ($password_hasher->check($password, $account)) {
         // Successful authentication.
         $uid = $account->uid;
 
         // Update user to new password scheme if needed.
-        if (user_needs_new_hash($account)) {
+        if ($password_hasher->userNeedsNewHash($account)) {
           $account->pass = $password;
           $account->save();
         }
@@ -1742,6 +1676,24 @@ function user_login_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'user/' . $user->uid;
 
   user_login_finalize($form_state);
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function user_user_login($edit, $account) {
+  // Reset static cache of default variables in template_preprocess() to reflect
+  // the new user.
+  drupal_static_reset('template_preprocess');
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function user_user_logout($account) {
+  // Reset static cache of default variables in template_preprocess() to reflect
+  // the new user.
+  drupal_static_reset('template_preprocess');
 }
 
 /**
@@ -1990,8 +1942,6 @@ function user_view_page($account) {
  *
  * When viewing a user profile, the $page array contains:
  *
- * - $page['content']['user_picture']:
- *   User's rendered picture.
  * - $page['content']['member_for']:
  *   Contains the default "Member for" profile data for a user.
  * - $page['content']['#account']:
@@ -2842,6 +2792,10 @@ function user_form_process_password_confirm($element) {
 
 /**
  * Implements hook_node_load().
+ *
+ * @todo Deprecated by $node->author, attached in
+ *   \Drupal\node\NodeRenderController::buildContent(). Update code that
+ *   depends on these properties.
  */
 function user_node_load($nodes, $types) {
   // Build an array of all uids for node authors, keyed by nid.
@@ -2850,33 +2804,13 @@ function user_node_load($nodes, $types) {
     $uids[$nid] = $node->uid;
   }
 
-  // Fetch name, picture, and data for these users.
-  $user_fields = db_query("SELECT uid, name, picture, data FROM {users} WHERE uid IN (:uids)", array(':uids' => $uids))->fetchAllAssoc('uid');
+  // Fetch name and data for these users.
+  $user_fields = db_query("SELECT uid, name, data FROM {users} WHERE uid IN (:uids)", array(':uids' => $uids))->fetchAllAssoc('uid');
 
   // Add these values back into the node objects.
   foreach ($uids as $nid => $uid) {
     $nodes[$nid]->name = $user_fields[$uid]->name;
-    $nodes[$nid]->picture = $user_fields[$uid]->picture;
     $nodes[$nid]->data = $user_fields[$uid]->data;
-  }
-}
-
-/**
- * Implements hook_image_style_delete().
- */
-function user_image_style_delete($style) {
-  // If a style is deleted, update the variables.
-  // Administrators choose a replacement style when deleting.
-  user_image_style_save($style);
-}
-
-/**
- * Implements hook_image_style_save().
- */
-function user_image_style_save($style) {
-  // If a style is renamed, update the variables that use it.
-  if ($style->id() != $style->getOriginalID()) {
-    variable_set('user_picture_style', $style->id());
   }
 }
 
@@ -3062,6 +2996,66 @@ function user_file_download_access($field, EntityInterface $entity, File $file) 
   if ($entity->entityType() == 'user') {
     return user_view_access($entity);
   }
+}
+
+/**
+ * Implements hook_toolbar().
+ */
+function user_toolbar() {
+  global $user;
+
+  // Add logout & user account links or login link.
+  if ($user->uid) {
+    $links = array(
+      'account' => array(
+        'title' => t('View profile'),
+        'href' => 'user',
+        'html' => TRUE,
+        'attributes' => array(
+          'title' => t('User account'),
+        ),
+      ),
+      'logout' => array(
+        'title' => t('Log out'),
+        'href' => 'user/logout',
+      ),
+    );
+  }
+  else {
+     $links = array(
+      'login' => array(
+        'title' => t('Log in'),
+        'href' => 'user',
+      ),
+    );
+  }
+
+  $user_tray = array(
+    '#heading' => t('User account actions'),
+    'content' => array(
+      '#theme' => 'links__toolbar_user',
+      '#links' => $links,
+      '#attributes' => array(
+        'class' => array('menu',),
+      ),
+    ),
+  );
+
+  $items['user'] = array(
+    'tab' => array(
+      'title' => user_format_name($user),
+      'href' => 'user',
+      'html' => FALSE,
+      'attributes' => array(
+        'title' => t('My account'),
+        'class' => array('icon', 'icon-user'),
+      ),
+    ),
+    'tray' => $user_tray,
+    'weight' => 100,
+  );
+
+  return $items;
 }
 
 /**
