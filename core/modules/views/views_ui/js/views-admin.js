@@ -487,7 +487,7 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
   this.redrawOperatorLabels();
   table.find('.views-group-title select')
     .once('views-rearrange-filter-handler')
-    .bind('change.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
+    .on('change.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
 
   // Bind handlers so that when a "Remove" link is clicked, we:
   // - Update the rowspans of cells containing an operator dropdown (since they
@@ -497,8 +497,8 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
   //   have a label display next to it).
   this.table.find('a.views-groups-remove-link')
     .once('views-rearrange-filter-handler')
-    .bind('click.views-rearrange-filter-handler', $.proxy(this, 'updateRowspans'))
-    .bind('click.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
+    .on('click.views-rearrange-filter-handler', $.proxy(this, 'updateRowspans'))
+    .on('click.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
 };
 
 /**
@@ -515,7 +515,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks 
     // When the link is clicked, dynamically click the hidden form button for
     // adding a new filter group.
     .once('views-rearrange-filter-handler')
-    .bind('click.views-rearrange-filter-handler', $.proxy(this, 'clickAddGroupButton'));
+    .on('click.views-rearrange-filter-handler', $.proxy(this, 'clickAddGroupButton'));
 
   // Find each (visually hidden) button for removing a filter group and insert
   // a link next to it.
@@ -528,7 +528,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.insertAddRemoveFilterGroupLinks 
       // When the link is clicked, dynamically click the corresponding form
       // button.
       .once('views-rearrange-filter-handler')
-      .bind('click.views-rearrange-filter-handler', {buttonId: buttonId}, $.proxy(this, 'clickRemoveGroupButton'));
+      .on('click.views-rearrange-filter-handler', {buttonId: buttonId}, $.proxy(this, 'clickRemoveGroupButton'));
   }
 };
 
