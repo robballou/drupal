@@ -893,12 +893,12 @@ Drupal.behaviors.viewsUiOverrideSelect = {
       var old_value = $submit.val();
 
       $submit.once('views-ui-override-button-text')
-        .bind('mouseup', function() {
+        .on('mouseup', function() {
           $(this).val(old_value);
           return true;
         });
 
-      $(this).bind('change', function() {
+      $(this).on('change', function() {
         var value = $(this).val();
         if (value === 'default') {
           $submit.val(Drupal.t('Apply (all displays)'));
