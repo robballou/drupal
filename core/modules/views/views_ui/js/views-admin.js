@@ -29,14 +29,17 @@ Drupal.behaviors.viewsUiEditView = {
 Drupal.behaviors.viewsUiAddView = {
   attach: function (context) {
 
-    var exclude, replace, suffix;
+    var exclude,
+      replace,
+      suffix,
+      $context = $(context);
     // Set up regular expressions to allow only numbers, letters, and dashes.
     exclude = new RegExp('[^a-z0-9\\-]+', 'g');
     replace = '-';
 
     // The page title, block title, and menu link fields can all be prepopulated
     // with the view name - no regular expression needed.
-    var $fields = $(context).find('[id^="edit-page-title"], [id^="edit-block-title"], [id^="edit-page-link-properties-title"]');
+    var $fields = $context.find('[id^="edit-page-title"], [id^="edit-block-title"], [id^="edit-page-link-properties-title"]');
     if ($fields.length) {
       if (!this.fieldsFiller) {
         this.fieldsFiller = new Drupal.viewsUi.FormFieldFiller($fields);
@@ -52,7 +55,7 @@ Drupal.behaviors.viewsUiAddView = {
     }
 
     // Prepopulate the path field with a URLified version of the view name.
-    var $pathField = $(context).find('[id^="edit-page-path"]');
+    var $pathField = $context.find('[id^="edit-page-path"]');
     if ($pathField.length) {
       if (!this.pathFiller) {
         this.pathFiller = new Drupal.viewsUi.FormFieldFiller($pathField, exclude, replace);
@@ -64,7 +67,7 @@ Drupal.behaviors.viewsUiAddView = {
 
     // Populate the RSS feed field with a URLified version of the view name, and
     // an .xml suffix (to make it unique).
-    var $feedField = $(context).find('[id^="edit-page-feed-properties-path"]');
+    var $feedField = $context.find('[id^="edit-page-feed-properties-path"]');
     if ($feedField.length) {
       if (!this.feedFiller) {
         suffix = '.xml';
