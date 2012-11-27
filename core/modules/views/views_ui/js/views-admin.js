@@ -251,9 +251,10 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
     // @todo This assumes English, but so does $addDisplayDropdown above. Add
     //   support for translation.
     $displayButtons.each(function () {
-      var label = $(this).val();
+      var $this = $(this),
+        label = $this.val();
       if (label.substr(0, 4) === 'Add ') {
-        $(this).val(label.substr(4));
+        $this.val(label.substr(4));
       }
     });
     $addDisplayDropdown.appendTo($menu);
@@ -272,8 +273,8 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
     // toggled on and off and we want the handler to take effect in the cases
     // that the class is present, but not when it isn't.
     $menu.find('li.add').on('mouseleave', function () {
-      var $this = $(this);
-      var $trigger = $this.children('a[href="#"]');
+      var $this = $(this),
+      $trigger = $this.children('a[href="#"]');
       if ($this.children('.action-list').is(':visible')) {
         Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
       }
@@ -568,8 +569,8 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = functi
 
   var dropdowns, newRow;
 
-  var titleRows = $('tr.views-group-title'),
-    titleRow;
+  var $titleRows = $('tr.views-group-title'),
+    $titleRow;
 
   // Get rid of the explanatory text around the operator; its placement is
   // explanatory enough.
@@ -580,21 +581,21 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = functi
   dropdowns = this.operator;
 
   // Move the operator to a new row just above the second group.
-  titleRow = $('tr#views-group-title-2');
+  $titleRow = $('tr#views-group-title-2');
   newRow = $('<tr class="filter-group-operator-row"><td colspan="5"></td></tr>');
   newRow.find('td').append(this.operator);
-  newRow.insertBefore(titleRow);
-  var i, length = titleRows.length;
+  newRow.insertBefore($titleRow);
+  var i, length = $titleRows.length;
   // Starting with the third group, copy the operator to a new row above the
   // group title.
   for (i = 2; i < length; i++) {
-    titleRow = $(titleRows[i]);
+    $titleRow = $($titleRows[i]);
     // Make a copy of the operator dropdown and put it in a new table row.
     var fakeOperator = this.operator.clone();
     fakeOperator.attr('id', '');
     newRow = $('<tr class="filter-group-operator-row"><td colspan="5"></td></tr>');
     newRow.find('td').append(fakeOperator);
-    newRow.insertBefore(titleRow);
+    newRow.insertBefore($titleRow);
     dropdowns = dropdowns.add(fakeOperator);
   }
 
@@ -649,11 +650,11 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
       // Make sure the row that just got moved (this.group) is inside one of
       // the filter groups (i.e. below an empty marker row or a draggable). If
       // it isn't, move it down one.
-      var thisRow = $(this.group);
-      var previousRow = thisRow.prev('tr');
-      if (previousRow.length && !previousRow.hasClass('group-message') && !previousRow.hasClass('draggable')) {
+      var $thisRow = $(this.group);
+      var $previousRow = $thisRow.prev('tr');
+      if ($previousRow.length && !$previousRow.hasClass('group-message') && !$previousRow.hasClass('draggable')) {
         // Move the dragged row down one.
-        var next = thisRow.next();
+        var next = $thisRow.next();
         if (next.is('tr')) {
           this.swap('after', next);
         }
@@ -672,13 +673,13 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
     // If the tabledrag change marker (i.e., the "*") has been inserted inside
     // a row after the operator label (i.e., "And" or "Or") rearrange the items
     // so the operator label continues to appear last.
-    var changeMarker = $(this.oldRowElement).find('.tabledrag-changed');
-    if (changeMarker.length) {
+    var $changeMarker = $(this.oldRowElement).find('.tabledrag-changed');
+    if ($changeMarker.length) {
       // Search for occurrences of the operator label before the change marker,
       // and reverse them.
-      var operatorLabel = changeMarker.prevAll('.views-operator-label');
+      var operatorLabel = $changeMarker.prevAll('.views-operator-label');
       if (operatorLabel.length) {
-        operatorLabel.insertAfter(changeMarker);
+        operatorLabel.insertAfter($changeMarker);
       }
     }
 
@@ -780,7 +781,7 @@ Drupal.behaviors.viewsFilterConfigSelectAll = {
   attach: function(context) {
 
     // Show the select all checkbox.
-    context.find('#views-ui-config-item-form div.form-item-options-value-all').once(function() {
+    $(context).find('#views-ui-config-item-form div.form-item-options-value-all').once(function() {
       $(this).show();
     })
     .find('input[type=checkbox]')
