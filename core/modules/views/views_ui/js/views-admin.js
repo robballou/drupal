@@ -234,7 +234,7 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
   attach: function (context) {
 
     // Build the add display menu and pull the display input buttons into it.
-    var $menu = $('#views-display-menu-tabs', context).once('views-ui-render-add-view-button-processed');
+    var $menu = context.find('#views-display-menu-tabs').once('views-ui-render-add-view-button-processed');
 
     if (!$menu.length) {
       return;
@@ -256,7 +256,7 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
     $addDisplayDropdown.appendTo($menu);
 
     // Add the click handler for the add display button
-    $('li.add > a', $menu).on('click', function (event) {
+    $menu.find('li.add > a').on('click', function (event) {
       event.preventDefault();
       var $trigger = $(this);
       Drupal.behaviors.viewsUiRenderAddViewButton.toggleMenu($trigger);
@@ -268,7 +268,7 @@ Drupal.behaviors.viewsUiRenderAddViewButton = {
     // We use the live binder because the open class on this item will be
     // toggled on and off and we want the handler to take effect in the cases
     // that the class is present, but not when it isn't.
-    $('li.add', $menu).on('mouseleave', function () {
+    $menu.find('li.add').on('mouseleave', function () {
       var $this = $(this);
       var $trigger = $this.children('a[href="#"]');
       if ($this.children('.action-list').is(':visible')) {
@@ -403,7 +403,7 @@ Drupal.behaviors.viewsUiPreview = {
   attach: function (context) {
 
     // Only act on the edit view form.
-    var contextualFiltersBucket = $('.views-display-column .views-ui-display-tab-bucket.contextual-filters', context);
+    var contextualFiltersBucket = context.find('.views-display-column .views-ui-display-tab-bucket.contextual-filters');
     if (contextualFiltersBucket.length === 0) {
       return;
     }
@@ -411,7 +411,7 @@ Drupal.behaviors.viewsUiPreview = {
     // If the display has no contextual filters, hide the form where you enter
     // the contextual filters for the live preview. If it has contextual filters,
     // show the form.
-    var contextualFilters = $('.views-display-setting a', contextualFiltersBucket);
+    var contextualFilters = contextualFiltersBucket.find('.views-display-setting a');
     if (contextualFilters.length) {
       $('#preview-args').parent().show();
     }
@@ -434,8 +434,8 @@ Drupal.behaviors.viewsUiRearrangeFilter = {
       return;
     }
 
-    var table = $('#views-rearrange-filters', context).once('views-rearrange-filters');
-    var operator = $('.form-item-filter-groups-operator', context).once('views-rearrange-filters');
+    var table = context.find('#views-rearrange-filters').once('views-rearrange-filters');
+    var operator = context.find('.form-item-filter-groups-operator').once('views-rearrange-filters');
     if (table.length) {
       new Drupal.viewsUi.rearrangeFilterHandler(table, operator);
     }
@@ -454,11 +454,11 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
   this.hasGroupOperator = this.operator.length > 0;
 
   // Keep a reference to all draggable rows within the table.
-  this.draggableRows = $('.draggable', table);
+  this.draggableRows = table.find('.draggable');
 
   // Keep a reference to the buttons for adding and removing filter groups.
   this.addGroupButton = $('input#views-add-group');
-  this.removeGroupButtons = $('input.views-remove-group', table);
+  this.removeGroupButtons = table.find('input.views-remove-group');
 
   // Add links that duplicate the functionality of the (hidden) add and remove
   // buttons.
@@ -481,7 +481,7 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
   // next to the filters in each group, and bind a handler so that they change
   // based on the values of the operator dropdown within that group.
   this.redrawOperatorLabels();
-  $('.views-group-title select', table)
+  table.find('.views-group-title select')
     .once('views-rearrange-filter-handler')
     .bind('change.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
 
@@ -491,7 +491,7 @@ Drupal.viewsUi.rearrangeFilterHandler = function (table, operator) {
   // - Redraw the operator labels next to the filters in the group (since the
   //   filter that is currently displayed last in each group is not supposed to
   //   have a label display next to it).
-  $('a.views-groups-remove-link', this.table)
+  this.table.find('a.views-groups-remove-link')
     .once('views-rearrange-filter-handler')
     .bind('click.views-rearrange-filter-handler', $.proxy(this, 'updateRowspans'))
     .bind('click.views-rearrange-filter-handler', $.proxy(this, 'redrawOperatorLabels'));
@@ -553,7 +553,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.clickRemoveGroupButton = functio
   // For some reason, here we only need to trigger .submit(), unlike for
   // Drupal.viewsUi.rearrangeFilterHandler.prototype.clickAddGroupButton()
   // where we had to trigger .mousedown() also.
-  $('input#' + event.data.buttonId, this.table).submit();
+  this.table.find('input#' + event.data.buttonId).submit();
   event.preventDefault();
 };
 
@@ -565,7 +565,8 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.duplicateGroupsOperator = functi
 
   var dropdowns, newRow;
 
-  var titleRows = $('tr.views-group-title'), titleRow;
+  var titleRows = $('tr.views-group-title'),
+    titleRow;
 
   // Get rid of the explanatory text around the operator; its placement is
   // explanatory enough.
@@ -683,7 +684,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.modifyTableDrag = function () {
     // implementation of tableDrag.onDrop().
     var groupRow = $(this.rowObject.element).prevAll('tr.group-message').get(0);
     var groupName = groupRow.className.replace(/([^ ]+[ ]+)*group-([^ ]+)-message([ ]+[^ ]+)*/, '$2');
-    var groupField = $('select.views-group-select', this.rowObject.element);
+    var groupField = this.rowObject.element.find('select.views-group-select', this.rowObject.element);
     if ($(this.rowObject.element).prev('tr').is('.group-message') && !groupField.is('.views-group-select-' + groupName)) {
       var oldGroupName = groupField.attr('class').replace(/([^ ]+[ ]+)*views-group-select-([^ ]+)([ ]+[^ ]+)*/, '$2');
       groupField.removeClass('views-group-select-' + oldGroupName).addClass('views-group-select-' + groupName);
@@ -701,7 +702,7 @@ Drupal.viewsUi.rearrangeFilterHandler.prototype.redrawOperatorLabels = function 
     // Within the row, the operator labels are displayed inside the first table
     // cell (next to the filter name).
     var $draggableRow = $(this.draggableRows[i]);
-    var $firstCell = $('td:first', $draggableRow);
+    var $firstCell = $draggableRow.find('td:first');
     if ($firstCell.length) {
       // The value of the operator label ("And" or "Or") is taken from the
       // first operator dropdown we encounter, going backwards from the current
@@ -776,7 +777,7 @@ Drupal.behaviors.viewsFilterConfigSelectAll = {
   attach: function(context) {
 
     // Show the select all checkbox.
-    $('#views-ui-config-item-form div.form-item-options-value-all', context).once(function() {
+    context.find('#views-ui-config-item-form div.form-item-options-value-all').once(function() {
       $(this).show();
     })
     .find('input[type=checkbox]')
@@ -886,9 +887,9 @@ Drupal.viewsUi.Checkboxifier.prototype.clickHandler = function () {
  */
 Drupal.behaviors.viewsUiOverrideSelect = {
   attach: function (context) {
-    $('#edit-override-dropdown', context).once('views-ui-override-button-text', function() {
+    context.find('#edit-override-dropdown').once('views-ui-override-button-text', function() {
       // Closures! :(
-      var $submit = $('#edit-submit', context);
+      var $submit = context.find('#edit-submit');
       var old_value = $submit.val();
 
       $submit.once('views-ui-override-button-text')
@@ -917,15 +918,18 @@ Drupal.behaviors.viewsUiOverrideSelect = {
 Drupal.viewsUi.resizeModal = function (e, no_shrink) {
 
   var $modal = $('.views-ui-dialog'),
-    $scroll = $('.scroll', $modal);
+    $scroll = $modal.find('.scroll');
   if ($modal.size() === 0 || $modal.css('display') === 'none') {
     return;
   }
 
   var windowWidth = $(window).width(),
-    windowHeight = $(window).height(),
-    maxWidth = parseInt(windowWidth * 0.85, 10), // 70% of window
-    minWidth = parseInt(windowWidth * 0.6, 10); // 70% of window
+    windowHeight = $(window).height();
+
+  // 70% of window
+  var maxWidth = parseInt(windowWidth * 0.85, 10);
+  // 70% of window
+  var minWidth = parseInt(windowWidth * 0.6, 10);
 
   // Set the modal to the minwidth so that our width calculation of
   // children works.
@@ -969,7 +973,7 @@ Drupal.viewsUi.resizeModal = function (e, no_shrink) {
   difference += $('.views-messages').outerHeight(true);
   difference += $('#views-ajax-title').outerHeight(true);
   difference += $('.views-add-form-selected').outerHeight(true);
-  difference += $('.form-buttons', $modal).outerHeight(true);
+  difference += $modal.find('.form-buttons').outerHeight(true);
 
   height = scrollHeight + difference;
 
