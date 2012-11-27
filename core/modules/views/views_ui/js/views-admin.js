@@ -155,8 +155,8 @@ Drupal.viewsUi.FormFieldFiller.prototype._populate = function () {
  */
 Drupal.viewsUi.FormFieldFiller.prototype._unbind = function () {
 
-  this.source.unbind('keyup.viewsUi change.viewsUi', this.populate);
-  this.target.unbind('focus.viewsUi', this.unbind);
+  this.source.off('keyup.viewsUi change.viewsUi', this.populate);
+  this.target.off('focus.viewsUi', this.unbind);
 };
 
 /**
