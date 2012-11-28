@@ -60,6 +60,7 @@ function translation_menu() {
     'access callback' => '_translation_tab_access',
     'access arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     'weight' => 2,
     'file' => 'translation.pages.inc',
   );
@@ -210,7 +211,7 @@ function translation_form_node_form_alter(&$form, &$form_state) {
       // Add translation values and workflow options.
       $form['tnid'] = array('#type' => 'value', '#value' => $node->tnid);
       $form['translation'] = array(
-        '#type' => 'fieldset',
+        '#type' => 'details',
         '#title' => t('Translation settings'),
         '#access' => translation_user_can_translate_node($node),
         '#collapsible' => TRUE,

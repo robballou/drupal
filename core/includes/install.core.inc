@@ -1784,7 +1784,8 @@ function install_check_requirements($install_state) {
         // having settings.php also owned by the webserver does not introduce
         // any additional security risk, so we keep the file in place.
         if (fileowner($default_settings_file) === fileowner($settings_file)) {
-          $writable = drupal_verify_install_file($settings_file, FILE_READABLE|FILE_WRITABLE);
+          $readable = drupal_verify_install_file($settings_file, FILE_READABLE);
+          $writable = drupal_verify_install_file($settings_file, FILE_WRITABLE);
           $exists = TRUE;
         }
         // If settings.php and default.settings.php have different owners, this
@@ -1808,7 +1809,8 @@ function install_check_requirements($install_state) {
           $exists = !$deleted;
           if ($exists) {
             $settings_file_ownership_error = TRUE;
-            $writable = drupal_verify_install_file($settings_file, FILE_READABLE|FILE_WRITABLE);
+            $readable = drupal_verify_install_file($settings_file, FILE_READABLE);
+            $writable = drupal_verify_install_file($settings_file, FILE_WRITABLE);
           }
         }
       }
@@ -1878,7 +1880,7 @@ function install_check_requirements($install_state) {
  */
 function _install_configure_form($form, &$form_state, &$install_state) {
   $form['site_information'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => st('Site information'),
     '#collapsible' => FALSE,
   );
@@ -1897,7 +1899,7 @@ function _install_configure_form($form, &$form_state, &$install_state) {
     '#weight' => -15,
   );
   $form['admin_account'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => st('Site maintenance account'),
     '#collapsible' => FALSE,
   );
@@ -1926,7 +1928,7 @@ function _install_configure_form($form, &$form_state, &$install_state) {
   );
 
   $form['server_settings'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => st('Server settings'),
     '#collapsible' => FALSE,
   );
@@ -1953,7 +1955,7 @@ function _install_configure_form($form, &$form_state, &$install_state) {
   );
 
   $form['update_notifications'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => st('Update notifications'),
     '#collapsible' => FALSE,
   );

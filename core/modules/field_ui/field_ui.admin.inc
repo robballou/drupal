@@ -455,12 +455,6 @@ function field_ui_widget_type_options($field_type = NULL, $by_label = FALSE) {
     $widget_types = field_info_widget_types();
     uasort($widget_types, 'drupal_sort_weight');
     foreach ($widget_types as $name => $widget_type) {
-      if (!isset($widget_type['field_types'])) {
-        // @todo: TestFieldWidgetMultiple widget is found but the info alter
-        //   hook isn't. Looks like another namespace problem. Ignore this entry
-        //   to allow the tests to pass. See http://drupal.org/node/1836008.
-        continue;
-      }
       foreach ($widget_type['field_types'] as $widget_field_type) {
         // Check that the field type exists.
         if (isset($field_types[$widget_field_type])) {
@@ -529,7 +523,7 @@ function field_ui_existing_field_options($entity_type, $bundle) {
           // - locked fields,
           // - fields already in the current bundle,
           // - fields that cannot be added to the entity type,
-          // - fields that that should not be added via user interface.
+          // - fields that should not be added via user interface.
 
           if (empty($field['locked'])
             && !field_info_instance($entity_type, $field['field_name'], $bundle)
@@ -568,7 +562,7 @@ function field_ui_field_settings_form($form, &$form_state, $instance) {
 
   // Create a form structure for the field values.
   $form['field'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Field settings'),
     '#description' => $description,
     '#tree' => TRUE,
@@ -662,7 +656,7 @@ function field_ui_widget_type_form($form, &$form_state, FieldInstance $instance)
   );
 
   $form['basic'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Change widget'),
   );
   $form['basic']['widget_type'] = array(
@@ -821,15 +815,15 @@ function field_ui_field_edit_form($form, &$form_state, $instance) {
   // Create a form structure for the instance values.
   $form['instance'] = array(
     '#tree' => TRUE,
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('%type settings', array('%type' => $bundles[$entity_type][$bundle]['label'])),
     '#description' => t('These settings apply only to the %field field when used in the %type type.', array(
       '%field' => $instance['label'],
       '%type' => $bundles[$entity_type][$bundle]['label'],
     )),
     // Ensure field_ui_field_edit_instance_pre_render() gets called in addition
-    // to, not instead of, the #pre_render function(s) needed by all fieldsets.
-    '#pre_render' => array_merge(array('field_ui_field_edit_instance_pre_render'), element_info_property('fieldset', '#pre_render', array())),
+    // to, not instead of, the #pre_render function(s) needed by all details.
+    '#pre_render' => array_merge(array('field_ui_field_edit_instance_pre_render'), element_info_property('details', '#pre_render', array())),
   );
 
   // Build the non-configurable instance values.
@@ -914,7 +908,7 @@ function field_ui_field_edit_form($form, &$form_state, $instance) {
 
   // Create a form structure for the field values.
   $form['field'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#title' => t('Global settings'),
@@ -972,7 +966,7 @@ function field_ui_field_edit_form_delete_submit($form, &$form_state) {
 /**
  * Render API callback: Merges instance, widget and other settings.
  *
- * Combines the instance, widget, and other settings into a single fieldset so
+ * Combines the instance, widget, and other settings into a single details so
  * that elements within each group can be shown at different weights as if they
  * all had the same parent.
  *
@@ -1000,14 +994,14 @@ function field_ui_field_edit_instance_pre_render($element) {
 }
 
 /**
- * Builds the default value fieldset for a given field instance.
+ * Builds the default value widget for a given field instance.
  */
 function field_ui_default_value_widget($field, $instance, &$form, &$form_state) {
   $field_name = $field['field_name'];
   $entity = $form['#entity'];
 
   $element = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Default value'),
     '#collapsible' => FALSE,
     '#tree' => TRUE,
