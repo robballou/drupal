@@ -8,6 +8,7 @@
 namespace Drupal\Core;
 
 use Drupal\Core\DependencyInjection\Compiler\RegisterKernelListenersPass;
+use Drupal\Core\DependencyInjection\Compiler\RegisterAccessChecksPass;
 use Drupal\Core\DependencyInjection\Compiler\RegisterMatchersPass;
 use Drupal\Core\DependencyInjection\Compiler\RegisterNestedMatchersPass;
 use Drupal\Core\DependencyInjection\Compiler\RegisterSerializationClassesPass;
@@ -76,7 +77,7 @@ class CoreBundle extends Bundle {
 
     $container->register('path.alias_manager', 'Drupal\Core\Path\AliasManager')
       ->addArgument(new Reference('database'))
-      ->addArgument(new Reference('keyvalue.database'));
+      ->addArgument(new Reference('keyvalue'));
 
     // Register the EntityManager.
     $container->register('plugin.manager.entity', 'Drupal\Core\Entity\EntityManager');
@@ -179,8 +180,18 @@ class CoreBundle extends Bundle {
     $container->register('view_subscriber', 'Drupal\Core\EventSubscriber\ViewSubscriber')
       ->addArgument(new Reference('content_negotiation'))
       ->addTag('event_subscriber');
-    $container->register('access_subscriber', 'Drupal\Core\EventSubscriber\AccessSubscriber')
+    $container->register('legacy_access_subscriber', 'Drupal\Core\EventSubscriber\LegacyAccessSubscriber')
       ->addTag('event_subscriber');
+    $container->register('access_manager', 'Drupal\Core\Access\AccessManager')
+      ->addArgument(new Reference('request'))
+      ->addMethodCall('setContainer', array(new Reference('service_container')));
+    $container->register('access_subscriber', 'Drupal\Core\EventSubscriber\AccessSubscriber')
+      ->addArgument(new Reference('access_manager'))
+      ->addTag('event_subscriber');
+    $container->register('access_check.default', 'Drupal\Core\Access\DefaultAccessCheck')
+      ->addTag('access_check');
+    $container->register('access_check.permission', 'Drupal\Core\Access\PermissionAccessCheck')
+      ->addTag('access_check');
     $container->register('maintenance_mode_subscriber', 'Drupal\Core\EventSubscriber\MaintenanceModeSubscriber')
       ->addTag('event_subscriber');
     $container->register('path_subscriber', 'Drupal\Core\EventSubscriber\PathSubscriber')
@@ -221,6 +232,9 @@ class CoreBundle extends Bundle {
     $container->addCompilerPass(new RegisterKernelListenersPass(), PassConfig::TYPE_AFTER_REMOVING);
     // Add a compiler pass for adding Normalizers and Encoders to Serializer.
     $container->addCompilerPass(new RegisterSerializationClassesPass());
+    // Add a compiler pass for registering event subscribers.
+    $container->addCompilerPass(new RegisterKernelListenersPass(), PassConfig::TYPE_AFTER_REMOVING);
+    $container->addCompilerPass(new RegisterAccessChecksPass());
   }
 
 }

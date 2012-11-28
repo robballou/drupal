@@ -295,10 +295,10 @@ function views_ui_break_lock_confirm($form, &$form_state, ViewUI $view) {
 
   $account = user_load($view->locked->owner);
   $form = confirm_form($form,
-                  t('Are you sure you want to break the lock on view %name?',
+                  t('Do you want to break the lock on view %name?',
                   array('%name' => $view->get('name'))),
                   $cancel,
-                  t('By breaking this lock, any unsaved changes made by !user will be lost!', array('!user' => theme('username', array('account' => $account)))),
+                  t('By breaking this lock, any unsaved changes made by !user will be lost.', array('!user' => theme('username', array('account' => $account)))),
                   t('Break lock'),
                   t('Cancel'));
   $form['actions']['submit']['#submit'][] = array($view, 'submitBreakLock');
@@ -332,7 +332,7 @@ function views_ui_build_preview(ViewUI $view, $display_id) {
 }
 
 /**
- * Move form elements into fieldsets for presentation purposes.
+ * Move form elements into details for presentation purposes.
  *
  * Many views forms use #tree = TRUE to keep their values in a hierarchy for
  * easier storage. Moving the form elements into fieldsets during form building
@@ -1855,14 +1855,6 @@ function views_ui_admin_settings_basic($form, &$form_state) {
     '#default_value' => $config->get('ui.show.display_embed'),
   );
 
-  $form['basic']['ui_custom_theme'] = array(
-    '#type' => 'select',
-    '#title' => t('Custom admin theme for the Views UI'),
-    '#options' => array('_default' => t('- Use default -')) + $options,
-    '#default_value' => $config->get('ui.custom_theme'),
-    '#description' => t('In some cases you might want to select a different admin theme for the Views UI.')
-  );
-
   $form['basic']['ui_exposed_filter_any_label'] = array(
     '#type' => 'select',
     '#title' => t('Label for "Any" value on non-required single-select exposed filters'),
@@ -1871,7 +1863,7 @@ function views_ui_admin_settings_basic($form, &$form_state) {
   );
 
   $form['live_preview'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Live preview settings'),
   );
 
@@ -1937,7 +1929,6 @@ function views_ui_admin_settings_basic_submit(&$form, &$form_state) {
     ->set('ui.show.master_display', $form_state['values']['ui_show_master_display'])
     ->set('ui.show.advanced_column', $form_state['values']['ui_show_advanced_column'])
     ->set('ui.show.display_embed', $form_state['values']['ui_show_display_embed'])
-    ->set('ui.custom_theme', $form_state['values']['ui_custom_theme'])
     ->set('ui.exposed_filter_any_label', $form_state['values']['ui_exposed_filter_any_label'])
     ->set('ui.always_live_preview', $form_state['values']['ui_always_live_preview'])
     ->set('ui.show.preview_information', $form_state['values']['ui_show_preview_information'])
@@ -1958,7 +1949,7 @@ function views_ui_admin_settings_advanced() {
   $config = config('views.settings');
 
   $form['cache'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Caching'),
   );
 
@@ -1976,7 +1967,7 @@ function views_ui_admin_settings_advanced() {
   );
 
   $form['debug'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Debugging'),
   );
 
@@ -2024,7 +2015,7 @@ function views_ui_admin_settings_advanced() {
   $options = views_fetch_plugin_names('display_extender');
   if (!empty($options)) {
     $form['extenders'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
     );
     ;
     $form['extenders']['display_extenders'] = array(
