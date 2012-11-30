@@ -2795,6 +2795,11 @@ function theme_fieldset($variables) {
   element_set_attributes($element, array('id'));
   _form_set_attributes($element, array('form-wrapper'));
 
+  if (!empty($element['#description'])) {
+    $description_id = $element['#attributes']['id'] . '--description';
+    $element['#attributes']['aria-describedby'] = $description_id;
+  }
+
   $output = '<fieldset' . new Attribute($element['#attributes']) . '>';
   if (!empty($element['#title'])) {
     // Always wrap fieldset legends in a SPAN for CSS positioning.
@@ -2802,7 +2807,9 @@ function theme_fieldset($variables) {
   }
   $output .= '<div class="fieldset-wrapper">';
   if (!empty($element['#description'])) {
-    $output .= '<div class="fieldset-description">' . $element['#description'] . '</div>';
+    $attributes = array('class' => 'fieldset-description', 'id' => $description_id);
+    $output .= '<div' . new Attribute($attributes) . '>' . $element['#description'] . '</div>';
+
   }
   $output .= $element['#children'];
   if (isset($element['#value'])) {
@@ -2996,7 +3003,8 @@ function form_process_date($element) {
   $element['#tree'] = TRUE;
 
   // Determine the order of day, month, year in the site's chosen date format.
-  $format = variable_get('date_format_short', 'm/d/Y - H:i');
+  $format = config('system.date')->get('formats.short.pattern');
+  $format = $format['php'];
   $sort = array();
   $sort['day'] = max(strpos($format, 'd'), strpos($format, 'j'));
   $sort['month'] = max(strpos($format, 'm'), strpos($format, 'M'));

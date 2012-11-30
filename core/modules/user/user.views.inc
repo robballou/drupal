@@ -24,6 +24,7 @@ function user_views_data() {
     'access query tag' => 'user_access',
   );
   $data['users']['table']['entity type'] = 'user';
+  $data['users']['table']['wizard_id'] = 'user';
 
   // uid
   $data['users']['uid'] = array(
@@ -313,14 +314,6 @@ function user_views_data() {
       'title' => t('Cancel link'),
       'help' => t('Provide a simple link to cancel the user.'),
       'id' => 'user_link_cancel',
-    ),
-  );
-
-  $data['users']['data'] = array(
-    'title' => t('Data'),
-    'help' => t('Provide serialized data of the user'),
-    'field' => array(
-      'id' => 'serialized',
     ),
   );
 

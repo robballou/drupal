@@ -278,7 +278,7 @@ function update_info_page() {
   _drupal_flush_css_js();
   // Flush the cache of all data for the update status module.
   if (db_table_exists('cache_update')) {
-    cache('update')->flush();
+    cache('update')->deleteAll();
   }
 
   update_task_list('info');
@@ -463,20 +463,6 @@ drupal_bootstrap(DRUPAL_BOOTSTRAP_CODE);
 update_fix_d8_requirements();
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 drupal_maintenance_theme();
-
-// @todo Remove after converting update.php to use DrupalKernel.
-$container = drupal_container();
-$container->register('database', 'Drupal\Core\Database\Connection')
-  ->setFactoryClass('Drupal\Core\Database\Database')
-  ->setFactoryMethod('getConnection')
-  ->addArgument('default');
-$container->register('lock', 'Drupal\Core\Lock\DatabaseLockBackend');
-$container->register('router.dumper', '\Drupal\Core\Routing\MatcherDumper')
-  ->addArgument(new Reference('database'));
-$container->register('router.builder', 'Drupal\Core\Routing\RouteBuilder')
-  ->addArgument(new Reference('router.dumper'))
-  ->addArgument(new Reference('lock'))
-  ->addArgument(new Reference('dispatcher'));
 
 // Turn error reporting back on. From now on, only fatal errors (which are
 // not passed through the error handler) will cause a message to be printed.
